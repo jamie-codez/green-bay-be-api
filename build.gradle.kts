@@ -1,3 +1,5 @@
+import java.io.ByteArrayOutputStream
+
 plugins {
     kotlin("jvm") version "1.8.0"
     application
@@ -5,8 +7,23 @@ plugins {
     id("com.github.johnrengelman.shadow") version "7.0.0"
 }
 
+fun getVersionName(): Any {
+    return try {
+        val stdout = ByteArrayOutputStream()
+        exec {
+            commandLine = listOf("git","describe","--tags")
+            standardOutput = stdout
+        }
+        val delim = "-"
+        val list: List<String> = stdout.toString().split(delim)
+        list[0]
+    }catch (ex:Exception){
+        ""
+    }
+}
+
 group = "com.greenbay.core"
-version = "1.0-SNAPSHOT"
+version = getVersionName()
 
 repositories {
     mavenCentral()

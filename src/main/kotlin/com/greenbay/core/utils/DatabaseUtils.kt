@@ -48,6 +48,22 @@ class DatabaseUtils(vertx: Vertx) {
         }
     }
 
+    fun findOne(
+        collection: String,
+        query: JsonObject,
+        success: (result: JsonObject) -> Unit,
+        fail: (throwable: Throwable) -> Unit
+    ) {
+        getDBClient().findOne(collection, query,JsonObject()) {
+            if (it.succeeded()) {
+                logger.info("Retrieve successful")
+                success(it.result())
+            } else {
+                fail(it.cause())
+            }
+        }
+    }
+
     fun findAndUpdate(
         collection: String,
         query: JsonObject,

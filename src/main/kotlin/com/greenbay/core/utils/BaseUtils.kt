@@ -54,31 +54,30 @@ class BaseUtils {
         fun execute(
             task: String,
             rc: RoutingContext,
+            role:String,
             inject: (accessToken: String, body: JsonObject,response:HttpServerResponse) -> Unit,
             vararg values: String
         ) {
-            logger.info("execute($task) -->")
-            val accessToken = rc.request().getHeader("access-token")
+            logger.info("execute($task) --> ")
             val body = rc.body().asJsonObject()
+            val accessToken = rc.request().getHeader("access-token")
             val response = rc.response().apply {
                 statusCode = OK.code()
                 statusMessage = OK.reasonPhrase()
-            }.putHeader("content-type", "application/json")
-            if (body.encode().length / 1024 > MAX_BODY_SIZE) {
-                logger.info("Request body too large [${body.encode().length / 1024}]MB")
-                    response.end(
-                        getResponse(
-                            REQUEST_ENTITY_TOO_LARGE.code(),
-                            "Request body too large [${body.encode().length / 1024}]"
-                        )
-                    )
+            }.putHeader("content-type","application/json")
+            if (accessToken.isNullOrEmpty()){
+                response.end(getResponse(UNAUTHORIZED.code(),"Access token missing"))
                 return
             }
-            if (hasValues(body,*values)){
-                inject(accessToken, body,response)
-            }else{
-                response.end(getResponse(BAD_REQUEST.code(),"Expected fields [${values.contentDeepToString()}]"))
+            bodyHandler(task, accessToken, role, body, response)
+        }
+
+        private fun bodyHandler(task: String,accessToken: String,role: String,body: JsonObject,response: HttpServerResponse){
+            if (body.encode().length/1024> MAX_BODY_SIZE){
+                response.end(getResponse(REQUEST_ENTITY_TOO_LARGE.code(),"Request body is too large. [${body.encode().length/1024} mbs]"))
+                return
             }
+
         }
 
         /**
@@ -101,7 +100,7 @@ class BaseUtils {
         /**
          * Verifies that the users is authenticated and authorized
          */
-        fun verifyAccess(
+        fun verifyToken(
             task: String,
             jwt: String,
             inject: () -> Unit,

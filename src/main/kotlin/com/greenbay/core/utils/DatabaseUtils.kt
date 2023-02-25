@@ -2,6 +2,7 @@ package com.greenbay.core.utils
 
 import io.vertx.core.Vertx
 import io.vertx.core.impl.logging.LoggerFactory
+import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.mongo.MongoClient
 
@@ -79,6 +80,16 @@ class DatabaseUtils(vertx: Vertx) {
                 logger.error("Error deleting ${query.encodePrettily()} -->")
                 fail(it.cause())
             }
+        }
+    }
+
+    fun aggregate(collection: String,pipeline:JsonArray,success: (result: JsonObject) -> Unit,fail: (throwable: Throwable) -> Unit){
+        getDBClient().aggregate(collection, pipeline).handler {
+            logger.info("Pipeline was successful ${pipeline.encodePrettily()}")
+            success(it)
+        }.endHandler {
+            logger.error("Pipeline failed")
+            fail(Throwable("Error occurred"))
         }
     }
 }

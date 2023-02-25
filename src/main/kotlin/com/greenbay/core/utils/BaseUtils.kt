@@ -74,7 +74,7 @@ class BaseUtils {
             getUser(subject,vertx,inject,res)
 
         }
-        fun getUser(email: String,vertx: Vertx,inject: (user:JsonObject) -> Unit,response: HttpServerResponse){
+        private fun getUser(email: String,vertx: Vertx,inject: (user:JsonObject) -> Unit,response: HttpServerResponse){
 
         }
 

@@ -160,7 +160,7 @@ class BaseUtils {
                 return
             }
             getUser(subject, {
-                if (hasRole(it.getJsonArray("roles"), role)) {
+                if (hasRole(it.getJsonObject("roles"), role)) {
                     inject(it)
                 } else {
                     response.end(getResponse(UNAUTHORIZED.code(), "Not enough permissions"))
@@ -178,7 +178,7 @@ class BaseUtils {
             response: HttpServerResponse
         ) {
             logger.info("getUser() -->")
-            dbUtil.findOne(Collections.ADMINS.toString(), JsonObject.of("email", email), {
+            dbUtil.findOne(Collections.APP_USERS.toString(), JsonObject.of("email", email), {
                 if (it.isEmpty) {
                     response.end(getResponse(NOT_FOUND.code(), "User does not exist"))
                     return@findOne
@@ -194,10 +194,10 @@ class BaseUtils {
         /**
          * Checks to conform that user has the role required to access the route in question
          */
-        fun hasRole(roles: JsonArray, role: String): Boolean {
+        fun hasRole(roles: JsonObject, role: String): Boolean {
             var isRole = true
             for (i in 0 until roles.size()) {
-                isRole = isRole && roles.getJsonObject(i).getBoolean(role) == true
+                isRole = isRole && roles.getBoolean(role) == true
             }
             return isRole
         }

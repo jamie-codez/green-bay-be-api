@@ -22,7 +22,10 @@ class HouseService : UserService() {
     }
 
     private fun createHouse(rc: RoutingContext) {
+        logger.info("createHouse() -->")
+        execute("createHouse", rc, "admin", { user, body, response ->
 
+        }, "houseNumber", "rent", "deposit", "occupied")
     }
 
     private fun getHouses(rc: RoutingContext) {

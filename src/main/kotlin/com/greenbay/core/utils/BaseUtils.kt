@@ -29,7 +29,7 @@ class BaseUtils {
             JsonObject.of("code", code, "message", message, "payload", payload).encodePrettily()
 
         /**
-         * Generates an access token with a 1 week expiry
+         * Generates an access token with a 1-week expiry
          */
         fun generateAccessJwt(email: String, roles: Array<String>): String {
             return JWT.create().withSubject(email).withIssuer(System.getenv("ISSUER"))
@@ -54,36 +54,63 @@ class BaseUtils {
         fun execute(
             task: String,
             rc: RoutingContext,
-            role:String,
-            inject: (accessToken: String, body: JsonObject,response:HttpServerResponse) -> Unit,
+            role: String,
+            inject: (user: JsonObject, body: JsonObject, response: HttpServerResponse) -> Unit,
             vararg values: String
         ) {
             logger.info("execute($task) --> ")
-            val body = rc.body().asJsonObject()
             val accessToken = rc.request().getHeader("access-token")
             val response = rc.response().apply {
                 statusCode = OK.code()
                 statusMessage = OK.reasonPhrase()
-            }.putHeader("content-type","application/json")
-            if (accessToken.isNullOrEmpty()){
-                response.end(getResponse(UNAUTHORIZED.code(),"Access token missing"))
+            }.putHeader("content-type", "application/json")
+            if (accessToken.isNullOrEmpty()) {
+                response.end(getResponse(UNAUTHORIZED.code(), "Access token missing"))
                 return
             }
-            bodyHandler(task, accessToken, role, body, response)
+            verifyToken(task, accessToken, { user ->
+                bodyHandler(task, rc, user, response, inject, *values)
+            }, role, response)
+            logger.info("execute($task) <--")
         }
 
-        private fun bodyHandler(task: String,accessToken: String,role: String,body: JsonObject,response: HttpServerResponse){
-            if (body.encode().length/1024> MAX_BODY_SIZE){
-                response.end(getResponse(REQUEST_ENTITY_TOO_LARGE.code(),"Request body is too large. [${body.encode().length/1024} mbs]"))
+        private fun bodyHandler(
+            task: String,
+            rc: RoutingContext,
+            user: JsonObject,
+            response: HttpServerResponse,
+            inject: (user: JsonObject, body: JsonObject, response: HttpServerResponse) -> Unit,
+            vararg values: String
+        ) {
+            logger.info("bodyHandler($task) -->")
+            val body = rc.body().asJsonObject()
+            if (body.encode().length / 1024 > MAX_BODY_SIZE) {
+                response.end(
+                    getResponse(
+                        REQUEST_ENTITY_TOO_LARGE.code(),
+                        "Request body is too large. [${body.encode().length / 1024} mbs]"
+                    )
+                )
                 return
             }
+            if (!user.getBoolean("verified")) {
+                response.end(getResponse(UNAUTHORIZED.code(), "User account not verified"))
+                return
+            }
+            if (hasValues(body, *values)) {
+                logger.info("missing field : [${values.contentDeepToString()}")
+                response.end(getResponse(BAD_REQUEST.code(), "expected fields [${values.contentDeepToString()}]"))
+                return
+            }
+            inject(user, body, response)
+            logger.info("bodyHandler($task) <--")
 
         }
 
         /**
          * checks if the body has the required fields
          */
-        fun hasValues(body: JsonObject, vararg values: String): Boolean {
+        private fun hasValues(body: JsonObject, vararg values: String): Boolean {
             if (values.isEmpty()) {
                 return true
             }
@@ -100,10 +127,10 @@ class BaseUtils {
         /**
          * Verifies that the users is authenticated and authorized
          */
-        fun verifyToken(
+        private fun verifyToken(
             task: String,
             jwt: String,
-            inject: () -> Unit,
+            inject: (user: JsonObject) -> Unit,
             role: String,
             response: HttpServerResponse
         ) {
@@ -134,11 +161,12 @@ class BaseUtils {
             }
             getUser(subject, {
                 if (hasRole(it.getJsonArray("roles"), role)) {
-                    inject()
+                    inject(it)
                 } else {
                     response.end(getResponse(UNAUTHORIZED.code(), "Not enough permissions"))
                 }
             }, res)
+            logger.info("verifyAccess($task) <--")
         }
 
         /**
@@ -149,16 +177,18 @@ class BaseUtils {
             inject: (user: JsonObject) -> Unit,
             response: HttpServerResponse
         ) {
+            logger.info("getUser() -->")
             dbUtil.findOne(Collections.ADMINS.toString(), JsonObject.of("email", email), {
                 if (it.isEmpty) {
                     response.end(getResponse(NOT_FOUND.code(), "User does not exist"))
                     return@findOne
                 }
-               inject(it)
+                inject(it)
             }, {
                 logger.error("getUser() --> ${it.cause}")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
+            logger.info("getUser() <--")
         }
 
         /**

@@ -110,7 +110,7 @@ class BaseUtils {
         /**
          * checks if the body has the required fields
          */
-        private fun hasValues(body: JsonObject, vararg values: String): Boolean {
+        fun hasValues(body: JsonObject, vararg values: String): Boolean {
             if (values.isEmpty()) {
                 return true
             }
@@ -194,7 +194,7 @@ class BaseUtils {
         /**
          * Checks to conform that user has the role required to access the route in question
          */
-        private fun hasRole(roles: JsonArray, role: String): Boolean {
+        fun hasRole(roles: JsonArray, role: String): Boolean {
             var isRole = true
             for (i in 0 until roles.size()) {
                 isRole = isRole && roles.getJsonObject(i).getBoolean(role) == true

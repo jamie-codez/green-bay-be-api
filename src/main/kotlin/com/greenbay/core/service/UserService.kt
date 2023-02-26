@@ -3,19 +3,22 @@ package com.greenbay.core.service
 import com.greenbay.core.Collections
 import com.greenbay.core.utils.BaseUtils.Companion.execute
 import com.greenbay.core.utils.BaseUtils.Companion.getResponse
+import com.greenbay.core.utils.BaseUtils.Companion.hasRole
+import com.greenbay.core.utils.BaseUtils.Companion.hasValues
 import com.greenbay.core.utils.DatabaseUtils
 import io.netty.handler.codec.http.HttpResponseStatus.*
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.impl.logging.LoggerFactory
+import io.vertx.core.json.Json
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
 import java.util.*
 
-class UserService : AbstractVerticle() {
+open class UserService : AbstractVerticle() {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
-    private val dbUtil = DatabaseUtils(this.vertx)
+    val dbUtil = DatabaseUtils(this.vertx)
 
     fun setUserRoutes(router: Router) {
         router.post("/createUser").handler(::createUser)
@@ -57,6 +60,7 @@ class UserService : AbstractVerticle() {
             val pipeline = JsonArray()
                 .add(JsonObject.of("\$skip", skip))
                 .add(JsonObject.of("\$limit", limit))
+                .add(JsonObject.of("\$sort", 1))
                 .add(
                     JsonObject.of(
                         "\$project",
@@ -70,7 +74,8 @@ class UserService : AbstractVerticle() {
                     )
                 )
             dbUtil.aggregate(Collections.APP_USERS.toString(), pipeline, {
-                response.end(getResponse(OK.code(), "Success", it))
+                val payload = JsonObject.of("data", it, "page", pageNumber, "sorted", true,"scheme","asc")
+                response.end(getResponse(OK.code(), "Success", payload))
             }, {
                 logger.error("getUsers(${it.cause}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
@@ -81,8 +86,11 @@ class UserService : AbstractVerticle() {
 
     private fun updateUser(rc: RoutingContext) {
         logger.info("updateUser() -->")
-        execute("updateUser", rc, "user", { _, body, response ->
+        execute("updateUser", rc, "user", { user, body, response ->
             val email = rc.request().getParam("email")
+            if (hasValues(body, "roles") && !hasRole(user.getJsonArray("roles"), "admin")) {
+                response.end(getResponse(UNAUTHORIZED.code(), "You dont have permission for this task"))
+            }
             dbUtil.findAndUpdate(Collections.APP_USERS.toString(), JsonObject.of("email", email), body, {
                 response.end(getResponse(OK.code(), "Successfully updated user", it))
             }, {

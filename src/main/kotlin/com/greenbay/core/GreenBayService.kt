@@ -1,4 +1,11 @@
 package com.greenbay.core
 
-class GreenBayService {
+import com.greenbay.core.service.AuthService
+import io.vertx.core.Promise
+
+class GreenBayService:AuthService() {
+
+    override fun start(startPromise: Promise<Void>?) {
+        super.start(startPromise)
+    }
 }

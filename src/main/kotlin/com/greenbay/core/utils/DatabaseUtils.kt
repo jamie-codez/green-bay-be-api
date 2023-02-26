@@ -100,6 +100,7 @@ class DatabaseUtils(vertx: Vertx) {
     }
 
     fun aggregate(collection: String,pipeline:JsonArray,success: (result: JsonObject) -> Unit,fail: (throwable: Throwable) -> Unit){
+        pipeline.add(JsonObject.of("allowDiskUse",true))
         getDBClient().aggregate(collection, pipeline).handler {
             logger.info("Pipeline was successful ${pipeline.encodePrettily()}")
             success(it)

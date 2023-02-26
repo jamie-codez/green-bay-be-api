@@ -11,7 +11,7 @@ import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
 import java.util.Date
 
-class HouseService : UserService() {
+open class HouseService : UserService() {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
 
     fun setHouseRoutes(router: Router) {
@@ -49,7 +49,7 @@ class HouseService : UserService() {
 
     private fun getHouses(rc: RoutingContext) {
         logger.info("getHouses() -->")
-        execute("getHouses", rc, "admin", { user, body, response ->
+        execute("getHouses", rc, "admin", { _, _, response ->
             val pageNumber = Integer.parseInt(rc.request().getParam("pageNumber")) - 1
             val limit = 20
             val skip = pageNumber * limit
@@ -81,7 +81,7 @@ class HouseService : UserService() {
 
     private fun updateHouse(rc: RoutingContext) {
         logger.info("updateHouse() -->")
-        execute("updateHouse", rc, "admin", { user, body, response ->
+        execute("updateHouse", rc, "admin", { _, body, response ->
             val houseNumber = rc.request().getParam("houseNumber")
             if (houseNumber.isNullOrEmpty()) {
                 response.end(getResponse(BAD_REQUEST.code(), "Expected param houseNumber"))
@@ -99,7 +99,7 @@ class HouseService : UserService() {
 
     private fun deleteHouse(rc: RoutingContext) {
         logger.info("deleteHouse() -->")
-        execute("deleteHouse", rc, "admin", { user, body, response ->
+        execute("deleteHouse", rc, "admin", { _, _, response ->
             val houseNumber = rc.request().getParam("houseNumber")
             if (houseNumber.isNullOrEmpty()) {
                 logger.error("deleteHouse(houseNumber Empty) <--")

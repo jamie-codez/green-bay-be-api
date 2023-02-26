@@ -9,6 +9,7 @@ import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
+import java.util.Date
 
 class HouseService : UserService() {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
@@ -24,8 +25,26 @@ class HouseService : UserService() {
     private fun createHouse(rc: RoutingContext) {
         logger.info("createHouse() -->")
         execute("createHouse", rc, "admin", { user, body, response ->
-
-        }, "houseNumber", "rent", "deposit", "occupied")
+            dbUtil.findOne(Collections.HOUSES.toString(), JsonObject.of("houseNumber", body.getString("houseNumber")), {
+                if (!it.isEmpty) {
+                    response.end(getResponse(CONFLICT.code(), "House already exists"))
+                    return@findOne
+                }
+                body.put("addedBy", user.getString("email"))
+                body.put("createdOn", Date(System.currentTimeMillis()))
+                body.put("occupied", false)
+                dbUtil.save(Collections.HOUSES.toString(), body, {
+                    response.end(getResponse(CREATED.code(), "Houses created successfully"))
+                }, {error->
+                    logger.error("createHouse(${error.cause} adding) <--")
+                    response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "House already exists"))
+                })
+            }, {
+                logger.error("createHouse(${it.cause} checking) <--")
+                response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "House already exists"))
+            })
+        }, "houseNumber", "rent", "deposit")
+        logger.info("createHouse() <--")
     }
 
     private fun getHouses(rc: RoutingContext) {

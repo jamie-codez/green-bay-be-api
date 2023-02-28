@@ -15,10 +15,10 @@ open class HouseService : UserService() {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
 
     fun setHouseRoutes(router: Router) {
-        router.post("/createHouse").handler(::createHouse)
-        router.post("/getHouses/:pageNumber").handler(::getHouses)
-        router.post("/updateHouse/:houseNumber").handler(::updateHouse)
-        router.post("/deleteHouse/:houseNumber").handler(::deleteHouse)
+        router.post("/house").handler(::createHouse)
+        router.post("/house/:pageNumber").handler(::getHouses)
+        router.post("/house/:houseNumber").handler(::updateHouse)
+        router.post("/house/:houseNumber").handler(::deleteHouse)
         setUserRoutes(router)
     }
 

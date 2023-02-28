@@ -13,10 +13,10 @@ import io.vertx.ext.web.RoutingContext
 open class TenantService : HouseService() {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
     fun setTenantRoutes(router: Router) {
-        router.post("/createTenant").handler(::createTenant)
-        router.post("/getTenants/:pageNumber").handler(::getTenants)
-        router.post("/updateTenant/:client").handler(::updateTenant)
-        router.post("/deleteTenant/:client").handler(::deleteTenant)
+        router.post("/tenant").handler(::createTenant)
+        router.get("/tenant/:pageNumber").handler(::getTenants)
+        router.put("/tenant/:client").handler(::updateTenant)
+        router.delete("/tenant/:client").handler(::deleteTenant)
         setHouseRoutes(router)
     }
 

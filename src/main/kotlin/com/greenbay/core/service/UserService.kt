@@ -21,10 +21,10 @@ open class UserService : AbstractVerticle() {
     val dbUtil = DatabaseUtils(this.vertx)
 
     fun setUserRoutes(router: Router) {
-        router.post("/createUser").handler(::createUser)
-        router.post("/getUsers/:pageNumber").handler(::getUsers)
-        router.put("/update/:email").handler(::updateUser)
-        router.delete("/delete/:email").handler(::deleteUser)
+        router.post("/user").handler(::createUser)
+        router.post("/users/:pageNumber").handler(::getUsers)
+        router.put("/user/:email").handler(::updateUser)
+        router.delete("/user/:email").handler(::deleteUser)
     }
 
     private fun createUser(rc: RoutingContext) {
@@ -88,7 +88,7 @@ open class UserService : AbstractVerticle() {
         logger.info("updateUser() -->")
         execute("updateUser", rc, "user", { user, body, response ->
             val email = rc.request().getParam("email")
-            if (hasValues(body, "roles") && !hasRole(user.getJsonArray("roles"), "admin")) {
+            if (hasValues(body, "roles") && !hasRole(user.getJsonObject("roles"), "admin")) {
                 response.end(getResponse(UNAUTHORIZED.code(), "You dont have permission for this task"))
             }
             dbUtil.findAndUpdate(Collections.APP_USERS.toString(), JsonObject.of("email", email), body, {

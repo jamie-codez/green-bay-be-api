@@ -8,6 +8,7 @@ class GreenBayService:AuthService() {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
 
     override fun start(startPromise: Promise<Void>?) {
+        val router = Router.router()
         super.start(startPromise)
     }
 }

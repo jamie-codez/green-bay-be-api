@@ -7,6 +7,11 @@ open class AuthService:TaskService(){
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
 
     fun setAuthRoutes(router: Router){
+        router.post("/login").handler(::login)
+        router.post("/logout").handler(::logout)
+        router.post("/sendPasswordRestEmail").handler(::sendPasswordResetEmail)
+        router.get("/sendPasswordPage").handler(::sendPaaswordPage)
+        router.post("/resetEmail").handler(::resetPassword)
         setTenantRoutes(router)
     }
 }

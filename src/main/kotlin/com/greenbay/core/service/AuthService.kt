@@ -72,12 +72,12 @@ open class AuthService : TaskService() {
             val query = JsonObject.of("email", body)
             dbUtil.findOne(Collections.SESSIONS.toString(), query, {
                 if (it.getString("email") != user.getString("email")) {
-                    response.end(getResponse(BAD_REQUEST.code(),"Operation not allowed"))
+                    response.end(getResponse(BAD_REQUEST.code(), "Operation not allowed"))
                     return@findOne
                 }
-                dbUtil.findOneAndDelete(Collections.SESSIONS.toString(),query,{
+                dbUtil.findOneAndDelete(Collections.SESSIONS.toString(), query, {
                     response.end(getResponse(OK.code(), "Logout successful"))
-                },{thr->
+                }, { thr ->
                     logger.error("logout(${thr.cause}) <--")
                     response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
                 })
@@ -94,11 +94,36 @@ open class AuthService : TaskService() {
     }
 
     private fun sendPasswordPage(rc: RoutingContext) {
-
+        rc.response().sendFile("src/main/resources/passwordReset.html")
     }
 
     private fun resetPassword(rc: RoutingContext) {
-
+        logger.info("resetPassword() -->")
+        val email = rc.request().getParam("email")
+        val password = rc.body().asJsonObject()
+        val response = rc.response().apply {
+            statusCode = OK.code()
+            statusMessage = OK.reasonPhrase()
+        }.putHeader("content-type", "application/json")
+        val query = JsonObject.of("email", email)
+        dbUtil.findOne(Collections.APP_USERS.toString(), query, {
+            if (it.isEmpty) {
+                response.end(getResponse(NOT_FOUND.code(), "User not found"))
+                return@findOne
+            }
+            val encodedPassword = BCryptPasswordEncoder().encode(password.getString("password"))
+            val update = JsonObject.of("\$set", JsonObject.of("password", encodedPassword))
+            dbUtil.findAndUpdate(Collections.APP_USERS.toString(), query, update, {
+                response.end(getResponse(OK.code(), "Password updated successfully"))
+            }, { thr ->
+                logger.error("resetPassword(${thr.cause}) <--")
+                response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
+            })
+        }, {
+            logger.error("resetPassword(${it.cause}) <--")
+            response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
+        })
+        logger.info("resetPassword() <--")
     }
 
 }

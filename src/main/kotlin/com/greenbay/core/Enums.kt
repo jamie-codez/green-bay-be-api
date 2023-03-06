@@ -7,6 +7,7 @@ enum class Collections(private var value: String) {
     TENANTS("tenants"),
     PAYMENTS("payments"),
     SESSIONS("sessions"),
+    RESET_CODES("reset_codes"),
     COMMUNICATIONS("communications");
 
     override fun toString(): String {

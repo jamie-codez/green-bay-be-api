@@ -6,13 +6,14 @@ import com.greenbay.core.utils.BaseUtils.Companion.execute
 import com.greenbay.core.utils.BaseUtils.Companion.generateAccessJwt
 import com.greenbay.core.utils.BaseUtils.Companion.generateRefreshJwt
 import com.greenbay.core.utils.BaseUtils.Companion.getResponse
-import com.greenbay.core.utils.BaseUtils.Companion.verifyToken
+import com.greenbay.core.utils.BaseUtils.Companion.sendEmail
 import io.netty.handler.codec.http.HttpResponseStatus.*
 import io.vertx.core.impl.logging.LoggerFactory
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+import java.util.*
 
 open class AuthService : TaskService() {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
@@ -90,7 +91,41 @@ open class AuthService : TaskService() {
     }
 
     private fun sendPasswordResetEmail(rc: RoutingContext) {
-
+        logger.info("sendPasswordResetPassword() -->")
+        val body = rc.body().asJsonObject()
+        val bodySize = body.encode().length / 1024
+        val response = rc.response().apply {
+            statusCode = OK.code()
+            statusMessage = OK.reasonPhrase()
+        }.putHeader("content-type", "application/json")
+        if (bodySize > MAX_BODY_SIZE) {
+            response.end(getResponse(REQUEST_ENTITY_TOO_LARGE.code(), "Body too large [$bodySize]kb"))
+            return
+        }
+        val query = JsonObject.of("email", body.getString("email"))
+        dbUtil.findOne(Collections.APP_USERS.toString(), query, {
+            if (it.isEmpty) {
+                response.end(getResponse(NOT_FOUND.code(), "User not found"))
+                return@findOne
+            }
+            val resetCode = JsonObject.of("email", it.getString("email"), "code", UUID.randomUUID().toString())
+            dbUtil.save(Collections.RESET_CODES.toString(), resetCode, {
+                sendEmail(
+                    body.getString("email"),
+                    "Password Reset email",
+                    "Click on the link to reset password",
+                    vertx = this.vertx
+                )
+                response.end(getResponse(OK.code(), "Password reset email send to your inbox"))
+            }, { thr ->
+                logger.info("sendPasswordResetEmail(${thr.cause}) <--")
+                response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
+            })
+        }, {
+            logger.info("sendPasswordResetEmail(${it.cause}) <--")
+            response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
+        })
+        logger.info("sendPasswordResetPassword() <--")
     }
 
     private fun sendPasswordPage(rc: RoutingContext) {

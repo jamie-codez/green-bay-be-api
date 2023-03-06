@@ -9,6 +9,7 @@ import io.vertx.core.http.HttpServerResponse
 import io.vertx.core.impl.logging.LoggerFactory
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
+import io.vertx.ext.mail.*
 import io.vertx.ext.web.RoutingContext
 import java.util.*
 
@@ -200,5 +201,41 @@ open class BaseUtils {
             return isRole
         }
 
+        /**
+         * Sends emails
+         */
+        fun sendEmail(
+            email: String,
+            subject: String,
+            messageText: String,
+            htmlText: String? = null,
+            attachment: MailAttachment? = null,
+            vertx: Vertx
+        ) {
+            val config = MailConfig()
+                .setPort(Integer.valueOf(System.getenv("GB_MAIL_PORT")))
+                .setHostname(System.getenv("GB_MAIL_HOST"))
+                .setSsl(true)
+                .setStarttls(StartTLSOptions.OPTIONAL)
+                .setUsername(System.getenv("GB_MAIL_USERNAME"))
+                .setPassword(System.getenv("GB_MAIL_PASSWORD"))
+                .setLogin(LoginOption.XOAUTH2)
+            val htmlString = String.format("<a href=\"http://%s\"> Activate account</a>", htmlText)
+            val client = MailClient.createShared(vertx, config, "mailme")
+            val message = MailMessage()
+                .setFrom("${System.getenv("GB_MAIL_ADDRESS")} (No reply)")
+                .setTo(email)
+                .setSubject(subject)
+                .setText(messageText)
+                .setHtml("Click link to reset password.$htmlString")
+            client.sendMail(message) {
+                if (it.succeeded()) {
+                    logger.info("INFO: Mail sent")
+
+                } else if (it.failed()) {
+                    logger.error("ERROR: Mail not sent")
+                }
+            }
+
+        }
     }
-}

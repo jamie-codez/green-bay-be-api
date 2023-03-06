@@ -13,7 +13,7 @@ class DatabaseUtils(vertx: Vertx) {
     private fun config(): JsonObject =
         JsonObject.of("connection_string", System.getenv("DB_CON_STRING"), "db_name", System.getenv("DB_NAME"))
 
-    fun getDBClient() = this.dbClient
+    private fun getDBClient(): MongoClient = this.dbClient
 
     fun save(
         collection: String,
@@ -54,7 +54,7 @@ class DatabaseUtils(vertx: Vertx) {
         success: (result: JsonObject) -> Unit,
         fail: (throwable: Throwable) -> Unit
     ) {
-        getDBClient().findOne(collection, query,JsonObject()) {
+        getDBClient().findOne(collection, query, JsonObject()) {
             if (it.succeeded()) {
                 logger.info("Retrieve successful")
                 success(it.result())
@@ -88,19 +88,24 @@ class DatabaseUtils(vertx: Vertx) {
         success: (result: JsonObject) -> Unit,
         fail: (throwable: Throwable) -> Unit
     ) {
-        getDBClient().findOneAndDelete(collection, query){
-            if (it.succeeded()){
+        getDBClient().findOneAndDelete(collection, query) {
+            if (it.succeeded()) {
                 logger.info("Delete successful ${query.encodePrettily()} -->")
                 success(it.result())
-            }else{
+            } else {
                 logger.error("Error deleting ${query.encodePrettily()} -->")
                 fail(it.cause())
             }
         }
     }
 
-    fun aggregate(collection: String,pipeline:JsonArray,success: (result: JsonObject) -> Unit,fail: (throwable: Throwable) -> Unit){
-        pipeline.add(JsonObject.of("allowDiskUse",true))
+    fun aggregate(
+        collection: String,
+        pipeline: JsonArray,
+        success: (result: JsonObject) -> Unit,
+        fail: (throwable: Throwable) -> Unit
+    ) {
+        pipeline.add(JsonObject.of("allowDiskUse", true))
         getDBClient().aggregate(collection, pipeline).handler {
             logger.info("Pipeline was successful ${pipeline.encodePrettily()}")
             success(it)

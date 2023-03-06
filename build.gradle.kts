@@ -36,7 +36,7 @@ dependencies {
     implementation("io.vertx:vertx-mail-client")
     implementation("io.vertx:vertx-lang-kotlin-coroutines")
     implementation("com.auth0:java-jwt:4.2.2")
-    implementation("org.springframework.security:spring-security-crypto:5.5.1")
+    implementation("org.springframework.security:spring-security-crypto:5.5.4")
     implementation(platform("com.squareup.okhttp3:okhttp-bom:4.10.0"))
     implementation("com.squareup.okhttp3:okhttp")
     implementation("com.squareup.okhttp3:logging-interceptor")

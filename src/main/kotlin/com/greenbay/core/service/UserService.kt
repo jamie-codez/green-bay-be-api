@@ -14,6 +14,7 @@ import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import java.util.*
 
 open class UserService : AbstractVerticle() {
@@ -36,6 +37,9 @@ open class UserService : AbstractVerticle() {
                 } else {
                     body.put("addedBy", user.getString("email"))
                     body.put("addedOn", Date(System.currentTimeMillis()))
+                    val encodedPassword = BCryptPasswordEncoder().encode(body.getString("password"))
+                    body.remove("password")
+                    body.put("password",encodedPassword)
                     dbUtil.save(Collections.APP_USERS.toString(), body, {
                         response.end(getResponse(CREATED.code(), "User created successfully, now attach roles"))
                     }, { error ->

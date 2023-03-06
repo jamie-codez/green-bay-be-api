@@ -2,7 +2,6 @@ package com.greenbay.core.utils
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import com.auth0.jwt.interfaces.Claim
 import com.greenbay.core.Collections
 import io.netty.handler.codec.http.HttpResponseStatus.*
 import io.vertx.core.Vertx
@@ -11,14 +10,12 @@ import io.vertx.core.impl.logging.LoggerFactory
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.RoutingContext
-import io.vertx.ext.web.handler.JWTAuthHandler
 import java.util.*
-import kotlin.collections.List
 
-class BaseUtils {
+open class BaseUtils {
     companion object {
         private val logger = LoggerFactory.getLogger(BaseUtils::class.java)
-        private const val MAX_BODY_SIZE = 5_000
+        const val MAX_BODY_SIZE = 5_000
         private val dbUtil = DatabaseUtils(Vertx.vertx())
         fun getResponse(code: Int, message: String): String =
             JsonObject.of("code", code, "message", message).encodePrettily()
@@ -32,7 +29,7 @@ class BaseUtils {
         /**
          * Generates an access token with a 1-week expiry
          */
-        fun generateAccessJwt(email: String, roles: Array<String>): String {
+        fun generateAccessJwt(email: String): String {
             return JWT.create().withSubject(email).withIssuer(System.getenv("ISSUER"))
                 .withExpiresAt(Date(System.currentTimeMillis() + (60 * 60 * 24 * 7 * 1000L)))
                 .withAudience(System.getenv("AUDIENCE")).withIssuedAt(Date(System.currentTimeMillis()))
@@ -42,7 +39,7 @@ class BaseUtils {
         /**
          * Generates a refresh token a week expiry
          */
-        fun generateRefreshJwt(email: String, roles: Array<String>): String {
+        fun generateRefreshJwt(email: String): String {
             return JWT.create().withSubject(email).withIssuer(System.getenv("ISSUER"))
                 .withExpiresAt(Date(System.currentTimeMillis() + (60 * 60 * 24 * 30 * 1000L)))
                 .withAudience(System.getenv("AUDIENCE")).withIssuedAt(Date(System.currentTimeMillis()))
@@ -128,7 +125,7 @@ class BaseUtils {
         /**
          * Verifies that the users is authenticated and authorized
          */
-        private fun verifyToken(
+        fun verifyToken(
             task: String,
             jwt: String,
             inject: (user: JsonObject) -> Unit,

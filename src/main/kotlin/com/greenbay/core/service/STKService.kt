@@ -4,13 +4,14 @@ import io.vertx.core.impl.logging.LoggerFactory
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
 
-open class STKService:AuthService() {
+open class STKService : AuthService() {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
-    fun setSTKRoutes(router: Router){
+    fun setSTKRoutes(router: Router) {
         router.post("/stk-push").handler(::stkPushExpress)
         setAuthRoutes(router)
     }
-    private fun stkPushExpress(rc:RoutingContext){
 
+    private fun stkPushExpress(rc: RoutingContext) {
+        rc.response().end("STK")
     }
 }

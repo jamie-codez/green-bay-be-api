@@ -16,9 +16,9 @@ open class PaymentService : TenantService() {
 
     fun setPaymentRoutes(router: Router) {
         router.post("/payment").handler(::createPayment)
-        router.post("/payment/:pageNumber").handler(::getPayments)
-        router.post("/payment/:referenceNumber").handler(::updatePayment)
-        router.post("/payment/:referenceNumber").handler(::deletePayment)
+        router.get("/payment/:pageNumber").handler(::getPayments)
+        router.put("/payment/:referenceNumber").handler(::updatePayment)
+        router.delete("/payment/:referenceNumber").handler(::deletePayment)
         setTenantRoutes(router)
     }
 

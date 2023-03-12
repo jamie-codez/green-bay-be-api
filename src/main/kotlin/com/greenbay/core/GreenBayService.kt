@@ -1,6 +1,7 @@
 package com.greenbay.core
 
 import com.greenbay.core.service.AuthService
+import com.greenbay.core.service.STKService
 import com.greenbay.core.utils.BaseUtils.Companion.getResponse
 import io.netty.handler.codec.http.HttpResponseStatus.OK
 import io.vertx.core.Promise
@@ -11,7 +12,7 @@ import io.vertx.ext.web.RoutingContext
 import io.vertx.ext.web.handler.BodyHandler
 import io.vertx.ext.web.handler.CorsHandler
 
-class GreenBayService : AuthService() {
+class GreenBayService : STKService() {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
     private val port = Integer.valueOf(System.getenv("GB_PORT"))
 

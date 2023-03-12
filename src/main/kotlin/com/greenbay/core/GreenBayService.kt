@@ -40,11 +40,11 @@ class GreenBayService : AuthService() {
         setAuthRoutes(router)
         vertx.createHttpServer()
             .requestHandler(router)
-            .listen(port){
-                if (it.succeeded()){
+            .listen(port) {
+                if (it.succeeded()) {
                     logger.info("Server started on port: $port")
                     startPromise?.future()?.succeeded()
-                }else{
+                } else {
                     logger.error("Server failed to start")
                     startPromise?.future()?.failed()
                 }

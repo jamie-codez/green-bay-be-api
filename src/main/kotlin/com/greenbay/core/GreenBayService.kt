@@ -38,7 +38,7 @@ class GreenBayService : STKService() {
 
         )
         router.get("/").handler(::ping)
-        setAuthRoutes(router)
+        setSTKRoutes(router)
         vertx.createHttpServer()
             .requestHandler(router)
             .listen(port) {

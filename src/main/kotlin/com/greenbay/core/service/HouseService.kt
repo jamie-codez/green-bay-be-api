@@ -16,9 +16,9 @@ open class HouseService : UserService() {
 
     fun setHouseRoutes(router: Router) {
         router.post("/house").handler(::createHouse)
-        router.post("/house/:pageNumber").handler(::getHouses)
-        router.post("/house/:houseNumber").handler(::updateHouse)
-        router.post("/house/:houseNumber").handler(::deleteHouse)
+        router.get("/house/:pageNumber").handler(::getHouses)
+        router.put("/house/:houseNumber").handler(::updateHouse)
+        router.delete("/house/:houseNumber").handler(::deleteHouse)
         setUserRoutes(router)
     }
 

@@ -8,11 +8,15 @@ open class STKService : AuthService() {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
     fun setSTKRoutes(router: Router) {
         router.post("/stk-push").handler(::stkPushExpress)
+        router.post("/callback").handler(::callback)
         setAuthRoutes(router)
     }
 
     private fun stkPushExpress(rc: RoutingContext) {
         rc.response()
             .end("STK")
+    }
+    private fun callback(rc:RoutingContext){
+
     }
 }

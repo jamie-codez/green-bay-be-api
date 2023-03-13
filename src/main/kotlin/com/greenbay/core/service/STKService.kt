@@ -12,7 +12,6 @@ open class STKService : AuthService() {
     }
 
     private fun stkPushExpress(rc: RoutingContext) {
-        rc.response()
-            .end("STK")
+        rc.response().end("STK")
     }
 }

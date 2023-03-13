@@ -35,7 +35,6 @@ class GreenBayService : STKService() {
                     )
                 )
                 .allowedMethods(setOf(HttpMethod.POST, HttpMethod.GET, HttpMethod.PUT, HttpMethod.DELETE))
-
         )
         router.get("/").handler(::ping)
         setSTKRoutes(router)

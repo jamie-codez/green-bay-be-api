@@ -109,16 +109,16 @@ open class TaskService : CommunicationService() {
         logger.info("searchTask() -->")
         execute("getTasks", rc, "user", { _, _, response ->
             val pageNumber = Integer.valueOf(rc.request().getParam("pageNumber")) - 1
-            val term = rc.request().getParam("term")?:""
+            val term = rc.request().getParam("term") ?: ""
             val limit = 20
             val skip = limit * pageNumber
-            if (term.isEmpty()){
-                response.end(getResponse(BAD_REQUEST.code(),"Expected param search-term"))
+            if (term.isEmpty()) {
+                response.end(getResponse(BAD_REQUEST.code(), "Expected param search-term"))
                 return@execute
             }
-            val query = JsonObject.of("\$text",JsonObject.of("\$search",term))
+            val query = JsonObject.of("\$text", JsonObject.of("\$search", term))
             val pipeline = JsonArray()
-                .add(JsonObject.of("\$match",query))
+                .add(JsonObject.of("\$match", query))
                 .add(
                     JsonObject.of(
                         "\$lookup", JsonObject
@@ -179,12 +179,57 @@ open class TaskService : CommunicationService() {
 
     private fun updateTask(rc: RoutingContext) {
         logger.info("updateTask() -->")
-
+        execute("updateTask", rc, "use", { _, body, response ->
+            val id = rc.request().getParam("id") ?: ""
+            if (id.isEmpty()) {
+                response.end(getResponse(BAD_REQUEST.code(), "Expected parameter id"))
+                return@execute
+            }
+            val query = JsonObject.of("_id", id)
+            dbUtil.findOne(Collections.TASKS.toString(), query, {
+                if (it.isEmpty) {
+                    response.end(getResponse(NOT_FOUND.code(), "Task not found"))
+                    return@findOne
+                }
+                dbUtil.findAndUpdate(Collections.TASKS.toString(), query,body, {
+                    response.end(getResponse(OK.code(), "Task updated successfully"))
+                }, { err ->
+                    logger.error("updateTask(${err.cause} -> updatingTask) <--")
+                    response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred"))
+                })
+            }, {
+                logger.error("updateTask(${it.cause}) <--")
+                response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred"))
+            })
+        })
         logger.info("updateTask() <--")
     }
 
     private fun deleteTask(rc: RoutingContext) {
         logger.info("deleteTask() -->")
+        execute("deleteTask", rc, "admin", { user, body, response ->
+            val id = rc.request().getParam("id") ?: ""
+            if (id.isEmpty()) {
+                response.end(getResponse(BAD_REQUEST.code(), "Expected parameter id"))
+                return@execute
+            }
+            val query = JsonObject.of("_id", id)
+            dbUtil.findOne(Collections.TASKS.toString(), query, {
+                if (it.isEmpty) {
+                    response.end(getResponse(NOT_FOUND.code(), "Task not found"))
+                    return@findOne
+                }
+                dbUtil.findOneAndDelete(Collections.TASKS.toString(), query, {
+                    response.end(getResponse(OK.code(), "Task deleted successfully"))
+                }, { err ->
+                    logger.error("deleteTask(${err.cause} -> deletingTask) <--")
+                    response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred"))
+                })
+            }, {
+                logger.error("deleteTask(${it.cause}) <--")
+                response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred"))
+            })
+        })
         logger.info("deleteTask() <--")
     }
 

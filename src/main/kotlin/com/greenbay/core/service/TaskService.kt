@@ -26,15 +26,18 @@ open class TaskService : CommunicationService() {
     }
 
     private fun searchTask(rc: RoutingContext) {
-
+        logger.info("searchTask() -->")
+        logger.info("searchTask() <--")
     }
 
     private fun updateTask(rc: RoutingContext) {
-
+        logger.info("updateTask() -->")
+        logger.info("updateTask() <--")
     }
 
     private fun deleteTask(rc: RoutingContext) {
-
+        logger.info("deleteTask() -->")
+        logger.info("deleteTask() <--")
     }
 
 }

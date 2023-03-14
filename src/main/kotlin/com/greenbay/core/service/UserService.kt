@@ -19,14 +19,15 @@ import java.util.*
 
 open class UserService : AbstractVerticle() {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
-    lateinit var dbUtil:DatabaseUtils
+    lateinit var dbUtil: DatabaseUtils
 
     fun setUserRoutes(router: Router) {
         dbUtil = DatabaseUtils(this.vertx)
-        router.post("/user").handler(::createUser)
-        router.post("/users/:pageNumber").handler(::getUsers)
-        router.put("/user/:email").handler(::updateUser)
-        router.delete("/user/:email").handler(::deleteUser)
+        router.post("/users").handler(::createUser)
+        router.get("/users/:pageNumber").handler(::getUsers)
+        router.get("/users/search/:term/:pageNumber").handler(::searchUser)
+        router.put("/users/:email").handler(::updateUser)
+        router.delete("/users/:email").handler(::deleteUser)
     }
 
     private fun createUser(rc: RoutingContext) {
@@ -40,7 +41,7 @@ open class UserService : AbstractVerticle() {
                     body.put("addedOn", Date(System.currentTimeMillis()))
                     val encodedPassword = BCryptPasswordEncoder().encode(body.getString("password"))
                     body.remove("password")
-                    body.put("password",encodedPassword)
+                    body.put("password", encodedPassword)
                     dbUtil.save(Collections.APP_USERS.toString(), body, {
                         response.end(getResponse(CREATED.code(), "User created successfully, now attach roles"))
                     }, { error ->
@@ -79,14 +80,41 @@ open class UserService : AbstractVerticle() {
                     )
                 )
             dbUtil.aggregate(Collections.APP_USERS.toString(), pipeline, {
-                val payload = JsonObject.of("data", it, "page", pageNumber, "sorted", true,"scheme","asc")
-                response.end(getResponse(OK.code(), "Success", payload))
+                it.add(JsonObject.of("page",pageNumber,"sorted",true))
+                response.end(getResponse(OK.code(), "Success", JsonObject.of("data",it)))
             }, {
                 logger.error("getUsers(${it.cause}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
         })
         logger.info("getUsers() <--")
+    }
+
+    private fun searchUser(rc: RoutingContext) {
+        logger.info("searchUser() -->")
+        execute("searchUser", rc, "admin", { user, body, response ->
+            val term = rc.request().getParam("term") ?: ""
+            val pageNumber = Integer.valueOf(rc.request().getParam("pageNumber")) - 1
+            val limit = 20
+            val skip = limit * pageNumber
+            if (term.isEmpty()) {
+                response.end(getResponse(BAD_REQUEST.code(), "Expected param term"))
+                return@execute
+            }
+            val query = JsonObject.of("\text", JsonObject.of("\$search", term))
+            val pipeline = JsonArray()
+                .add(JsonObject.of("\$match", query))
+                .add(JsonObject.of("\$limit", limit))
+                .add(JsonObject.of("\$skip", skip))
+            dbUtil.aggregate(Collections.APP_USERS.toString(), pipeline, {
+                it.add(JsonObject.of("page",pageNumber,"sorted",false))
+                response.end(getResponse(OK.code(),"Success", JsonObject.of("data",it)))
+            }, {
+                logger.error("searchUser(${it.cause} -> pipeline) <--")
+                response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
+            })
+        })
+        logger.info("searchUser() <--")
     }
 
     private fun updateUser(rc: RoutingContext) {

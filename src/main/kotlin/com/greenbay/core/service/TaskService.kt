@@ -4,10 +4,11 @@ import com.greenbay.core.Collections
 import com.greenbay.core.TaskStatus
 import com.greenbay.core.utils.BaseUtils.Companion.execute
 import com.greenbay.core.utils.BaseUtils.Companion.getResponse
-import io.netty.handler.codec.http.HttpResponseStatus.CREATED
-import io.netty.handler.codec.http.HttpResponseStatus.INTERNAL_SERVER_ERROR
+import io.netty.handler.codec.http.HttpResponseStatus.*
 import io.vertx.core.impl.logging.LoggerFactory
+import io.vertx.core.json.Json
 import io.vertx.core.json.JsonArray
+import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
 import java.util.Date
@@ -41,23 +42,144 @@ open class TaskService : CommunicationService() {
 
     private fun getTasks(rc: RoutingContext) {
         logger.info("getTasks() -->")
-        execute("getTasks", rc, "user", { user, body, response ->
+        execute("getTasks", rc, "user", { _, _, response ->
             val pageNumber = Integer.valueOf(rc.request().getParam("pageNumber")) - 1
             val limit = 20
-            val skip = limit*pageNumber
+            val skip = limit * pageNumber
             val pipeline = JsonArray()
-
+                .add(
+                    JsonObject.of(
+                        "\$lookup", JsonObject
+                            .of(
+                                "collection", "app_users",
+                                "localField", "to",
+                                "foreignField", "email",
+                                "as", "client"
+                            )
+                    )
+                )
+                .add(
+                    JsonObject.of(
+                        "\$lookup", JsonObject.of(
+                            "collection", "app_users",
+                            "localField", "createdBy",
+                            "foreignField", "email",
+                            "as", "createdBy"
+                        )
+                    )
+                )
+                .add(
+                    JsonObject.of(
+                        "\$unwind",
+                        JsonObject.of("path", "\$client", "preserveNullAndEmptyArrays", true)
+                    )
+                )
+                .add(
+                    JsonObject.of(
+                        "\$unwind",
+                        JsonObject.of("path", "\$createdBy", "preserveNullAndEmptyArrays", true)
+                    )
+                )
+                .add(
+                    JsonObject.of(
+                        "\$project", JsonObject
+                            .of(
+                                "_id", "\$id",
+                                "clientFirstName", "\$client.firstName",
+                                "clientLastName", "\$client.lastName",
+                                "clientPhoneNumber", "\$client.phoneNumber",
+                                "clientEmail", "\$client.email",
+                            )
+                    )
+                )
+                .add(JsonObject.of("\$skip", skip))
+                .add(JsonObject.of("\$limit", limit))
+            dbUtil.aggregate(Collections.TASKS.toString(), pipeline, {
+                it.add(JsonObject.of("paging", JsonObject.of("page", pageNumber, "sorted", false)))
+                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it)))
+            }, {
+                logger.error("getTasks(${it.cause}) <--")
+                response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred "))
+            })
         })
         logger.info("getTasks() <--")
     }
 
     private fun searchTask(rc: RoutingContext) {
         logger.info("searchTask() -->")
+        execute("getTasks", rc, "user", { _, _, response ->
+            val pageNumber = Integer.valueOf(rc.request().getParam("pageNumber")) - 1
+            val term = rc.request().getParam("term")?:""
+            val limit = 20
+            val skip = limit * pageNumber
+            if (term.isEmpty()){
+                response.end(getResponse(BAD_REQUEST.code(),"Expected param search-term"))
+                return@execute
+            }
+            val query = JsonObject.of("\$text",JsonObject.of("\$search",term))
+            val pipeline = JsonArray()
+                .add(JsonObject.of("\$match",query))
+                .add(
+                    JsonObject.of(
+                        "\$lookup", JsonObject
+                            .of(
+                                "collection", "app_users",
+                                "localField", "to",
+                                "foreignField", "email",
+                                "as", "client"
+                            )
+                    )
+                )
+                .add(
+                    JsonObject.of(
+                        "\$lookup", JsonObject.of(
+                            "collection", "app_users",
+                            "localField", "createdBy",
+                            "foreignField", "email",
+                            "as", "createdBy"
+                        )
+                    )
+                )
+                .add(
+                    JsonObject.of(
+                        "\$unwind",
+                        JsonObject.of("path", "\$client", "preserveNullAndEmptyArrays", true)
+                    )
+                )
+                .add(
+                    JsonObject.of(
+                        "\$unwind",
+                        JsonObject.of("path", "\$createdBy", "preserveNullAndEmptyArrays", true)
+                    )
+                )
+                .add(
+                    JsonObject.of(
+                        "\$project", JsonObject
+                            .of(
+                                "_id", "\$id",
+                                "clientFirstName", "\$client.firstName",
+                                "clientLastName", "\$client.lastName",
+                                "clientPhoneNumber", "\$client.phoneNumber",
+                                "clientEmail", "\$client.email",
+                            )
+                    )
+                )
+                .add(JsonObject.of("\$skip", skip))
+                .add(JsonObject.of("\$limit", limit))
+            dbUtil.aggregate(Collections.TASKS.toString(), pipeline, {
+                it.add(JsonObject.of("paging", JsonObject.of("page", pageNumber, "sorted", false)))
+                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it)))
+            }, {
+                logger.error("getTasks(${it.cause}) <--")
+                response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred "))
+            })
+        })
         logger.info("searchTask() <--")
     }
 
     private fun updateTask(rc: RoutingContext) {
         logger.info("updateTask() -->")
+
         logger.info("updateTask() <--")
     }
 

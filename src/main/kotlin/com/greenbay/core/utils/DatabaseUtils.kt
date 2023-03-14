@@ -102,14 +102,19 @@ class DatabaseUtils(vertx: Vertx) {
     fun aggregate(
         collection: String,
         pipeline: JsonArray,
-        success: (result: JsonObject) -> Unit,
+        success: (result: ArrayList<JsonObject?>) -> Unit,
         fail: (throwable: Throwable) -> Unit
     ) {
         pipeline.add(JsonObject.of("allowDiskUse", true))
+        pipeline.add(JsonObject.of("\$count","items"))
+        val results = ArrayList<JsonObject?>()
         getDBClient().aggregate(collection, pipeline).handler {
-            logger.info("Pipeline was successful ${pipeline.encodePrettily()}")
-            success(it)
+            logger.info("aggregate(streaming data) -->")
+            results.add(it)
         }.endHandler {
+            logger.info("Pipeline was successful ${pipeline.encodePrettily()}")
+            success(results)
+        }.exceptionHandler {
             logger.error("Pipeline failed")
             fail(Throwable("Error occurred"))
         }

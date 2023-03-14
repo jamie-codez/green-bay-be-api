@@ -48,9 +48,12 @@ open class PaymentService : TenantService() {
             val skip = pageNumber * limit
             val pipeline = JsonArray()
                 .add(JsonObject.of("\$match", JsonObject.of("from", user.getString("email"))))
+                .add(JsonObject.of("\$count","total_documents"))
                 .add(JsonObject.of("\$skip", skip))
                 .add(JsonObject.of("\$limit", limit))
             dbUtil.aggregate(Collections.PAYMENTS.toString(), pipeline, {
+                it.put("paging",JsonObject.of("page",pageNumber,"total_docs",it.getString("total_docs")))
+                it.remove("total_docs")
                 response.end(getResponse(OK.code(), "Successful", it))
             }, {
                 logger.error("getPayments(${it.message} -> ${it.cause})")

@@ -5,6 +5,7 @@ import com.greenbay.core.utils.BaseUtils.Companion.execute
 import com.greenbay.core.utils.BaseUtils.Companion.getResponse
 import io.netty.handler.codec.http.HttpResponseStatus.*
 import io.vertx.core.impl.logging.LoggerFactory
+import io.vertx.core.json.Json
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Router
@@ -14,10 +15,11 @@ import java.util.*
 open class CommunicationService : PaymentService() {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
     fun setCommunicationRoutes(router: Router) {
-        router.post("/communication").handler(::createCommunication)
-        router.get("/communication/:pageNumber").handler(::getCommunications)
-        router.put("/communication/:id").handler(::updateCommunication)
-        router.delete("/communication/:id").handler(::deleteCommunication)
+        router.post("/communications").handler(::createCommunication)
+        router.get("/communications/:pageNumber").handler(::getCommunications)
+        router.get("/communication/:term/:pageNumber").handler(::searchCommunication)
+        router.put("/communications/:id").handler(::updateCommunication)
+        router.delete("/communications/:id").handler(::deleteCommunication)
         setPaymentRoutes(router)
     }
 
@@ -26,7 +28,8 @@ open class CommunicationService : PaymentService() {
         execute(
             "createCommunication", rc, "user", { user, body, response ->
                 body.put("id", UUID.randomUUID().toString())
-                body.put("dateCreated", Date(System.currentTimeMillis()))
+                    .put("createdBy", user.getString("email"))
+                    .put("dateCreated", Date(System.currentTimeMillis()))
                 dbUtil.save(Collections.COMMUNICATIONS.toString(), body, {
                     response.end(getResponse(CREATED.code(), "Communication created successfully"))
                 }, {
@@ -40,10 +43,10 @@ open class CommunicationService : PaymentService() {
 
     private fun getCommunications(rc: RoutingContext) {
         logger.info("getCommunications() -->")
-        execute("getCommunications", rc, "user", { user, body, response ->
+        execute("getCommunications", rc, "user", { _, _, response ->
             val limit = 20
-            val pageSize = Integer.valueOf(rc.request().getParam("pageNumber")) - 1
-            val skip = pageSize * limit
+            val pageNumber = Integer.valueOf(rc.request().getParam("pageNumber")) - 1
+            val skip = pageNumber * limit
             val pipeline = JsonArray()
                 .add(
                     JsonObject.of(
@@ -66,7 +69,8 @@ open class CommunicationService : PaymentService() {
                 .add(JsonObject.of("\$limit", limit))
                 .add(JsonObject.of("\$skip", skip))
             dbUtil.aggregate(Collections.COMMUNICATIONS.toString(), pipeline, {
-                response.end(getResponse(OK.code(), "Successful", it))
+                it.add(JsonObject.of("page", pageNumber, "sorted", false))
+                response.end(getResponse(OK.code(), "Successful", JsonObject.of("data", it)))
             }, {
                 logger.error("getCommunications(${it.message} -> ${it.cause}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
@@ -75,9 +79,54 @@ open class CommunicationService : PaymentService() {
         logger.info("getCommunications() <--")
     }
 
+    private fun searchCommunication(rc: RoutingContext) {
+        logger.info("searchCommunication() -->")
+        execute("searchCommunication", rc, "user", { _, _, response ->
+            val pageNumber = Integer.valueOf(rc.request().getParam("pageNumber")) - 1
+            val term = rc.request().getParam("term") ?: ""
+            val limit = 20
+            val skip = pageNumber * limit
+            if (term.isEmpty()) {
+                response.end(getResponse(BAD_REQUEST.code(), "Expected param search-term"))
+                return@execute
+            }
+            val query = JsonObject.of("\$text", JsonObject.of("\$search", term))
+            val pipeline = JsonArray()
+                .add(JsonObject.of("\$match", query))
+                .add(
+                    JsonObject.of(
+                        "\$lookup", JsonObject.of(
+                            "collection", "app_users",
+                            "localField", "to",
+                            "foreignField", "email",
+                            "as", "user"
+                        )
+                    )
+                )
+                .add(
+                    JsonObject.of(
+                        "\$unwind", JsonObject.of(
+                            "path", "\$user",
+                            "preserveNullAndEmptyArrays", true
+                        )
+                    )
+                )
+                .add(JsonObject.of("\$limit", limit))
+                .add(JsonObject.of("\$skip", skip))
+            dbUtil.aggregate(Collections.COMMUNICATIONS.toString(), pipeline, {
+                it.add(JsonObject.of("page", pageNumber, "sorted", false))
+                response.end(getResponse(OK.code(), "Successful", JsonObject.of("data", it)))
+            }, {
+                logger.error("searchCommunication(${it.message} -> ${it.cause}) <--")
+                response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
+            })
+        })
+        logger.info("searchCommunication() <--")
+    }
+
     private fun updateCommunication(rc: RoutingContext) {
         logger.info("updateCommunication() -->")
-        execute("updateCommunication", rc, "user", { user, body, response ->
+        execute("updateCommunication", rc, "user", { _, body, response ->
             val id = rc.request().getParam("id")
             if (id.isNullOrEmpty()) {
                 response.end(getResponse(BAD_REQUEST.code(), "Expected param id"))
@@ -97,7 +146,7 @@ open class CommunicationService : PaymentService() {
 
     private fun deleteCommunication(rc: RoutingContext) {
         logger.info("deleteCommunication() -->")
-        execute("deleteCommunication", rc, "admin", { user, body, response ->
+        execute("deleteCommunication", rc, "admin", { _, _, response ->
             val id = rc.request().getParam("id")
             if (id.isNullOrEmpty()) {
                 response.end(getResponse(BAD_REQUEST.code(), "Expected field id"))

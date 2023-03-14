@@ -5,6 +5,7 @@ import com.greenbay.core.utils.BaseUtils.Companion.execute
 import com.greenbay.core.utils.BaseUtils.Companion.getResponse
 import io.netty.handler.codec.http.HttpResponseStatus.*
 import io.vertx.core.impl.logging.LoggerFactory
+import io.vertx.core.json.Json
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Router
@@ -15,10 +16,11 @@ open class HouseService : UserService() {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
 
     fun setHouseRoutes(router: Router) {
-        router.post("/house").handler(::createHouse)
-        router.get("/house/:pageNumber").handler(::getHouses)
-        router.put("/house/:houseNumber").handler(::updateHouse)
-        router.delete("/house/:houseNumber").handler(::deleteHouse)
+        router.post("/houses").handler(::createHouse)
+        router.get("/houses/:pageNumber").handler(::getHouses)
+        router.get("/houses/:term/:pageNumber").handler(::searchHouse)
+        router.put("/houses/:houseNumber").handler(::updateHouse)
+        router.delete("/houses/:houseNumber").handler(::deleteHouse)
         setUserRoutes(router)
     }
 
@@ -43,7 +45,7 @@ open class HouseService : UserService() {
                 logger.error("createHouse(${it.cause} checking) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "House already exists"))
             })
-        }, "houseNumber", "rent", "deposit","floorNo")
+        }, "houseNumber", "rent", "deposit","floorNumber")
         logger.info("createHouse() <--")
     }
 
@@ -64,8 +66,11 @@ open class HouseService : UserService() {
                             "houseNumber", 1,
                             "rent", 1,
                             "deposit", 1,
-                            "occupied", 1
-                        )
+                            "occupied", 1,
+                            "floorNumber",1,
+                            "createdBy",1,
+                            "createdOn",1
+                            )
                     )
                 )
             dbUtil.aggregate(Collections.HOUSES.toString(), pipeline, {
@@ -77,6 +82,48 @@ open class HouseService : UserService() {
             })
         })
         logger.info("getHouses() <--")
+    }
+
+    private fun searchHouse(rc: RoutingContext){
+        logger.info("searchHouse() -->")
+        execute("searchHouse", rc, "admin", { _, _, response ->
+            val pageNumber = Integer.parseInt(rc.request().getParam("pageNumber")) - 1
+            val term = rc.request().getParam("term")?:""
+            val limit = 20
+            val skip = pageNumber * limit
+            if (term.isEmpty()){
+                response.end(getResponse(BAD_REQUEST.code(),"Expected param search-term"))
+                return@execute
+            }
+            val query = JsonObject.of("\$text",JsonObject.of("\$search",term))
+            val pipeline = JsonArray()
+                .add(JsonObject.of("\$match",query))
+                .add(JsonObject.of("\$skip", skip))
+                .add(JsonObject.of("\$limit", limit))
+                .add(JsonObject.of("\$sort", 1))
+                .add(
+                    JsonObject.of(
+                        "\$project",
+                        JsonObject.of(
+                            "houseNumber", 1,
+                            "rent", 1,
+                            "deposit", 1,
+                            "occupied", 1,
+                            "floorNumber",1,
+                            "createdBy",1,
+                            "createdOn",1
+                        )
+                    )
+                )
+            dbUtil.aggregate(Collections.HOUSES.toString(), pipeline, {
+                val payload = JsonObject.of("data", it, "page", pageNumber, "sorted", true, "scheme", "asc")
+                response.end(getResponse(OK.code(), "Successful", payload))
+            }, {
+                logger.error("searchHouse(${it.cause}) <--")
+                response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
+            })
+        })
+        logger.info("searchHouse() <--")
     }
 
     private fun updateHouse(rc: RoutingContext) {

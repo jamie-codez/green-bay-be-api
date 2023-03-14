@@ -8,7 +8,18 @@ enum class Collections(private var value: String) {
     PAYMENTS("payments"),
     SESSIONS("sessions"),
     RESET_CODES("reset_codes"),
+    TASKS("TASKS"),
     COMMUNICATIONS("communications");
+
+    override fun toString(): String {
+        return value.trim()
+    }
+}
+
+enum class TaskStatus(private var value: String){
+    COMPLETED("COMPLETED"),
+    STARTED("STARTED"),
+    PENDING("PENDING");
 
     override fun toString(): String {
         return value.trim()

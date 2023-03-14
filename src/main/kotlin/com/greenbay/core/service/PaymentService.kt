@@ -15,11 +15,12 @@ open class PaymentService : TenantService() {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
 
     fun setPaymentRoutes(router: Router) {
-        router.post("/payment").handler(::createPayment)
-        router.get("/payment/:pageNumber").handler(::getPayments)
-        router.put("/payment/:referenceNumber").handler(::updatePayment)
-        router.delete("/payment/:referenceNumber").handler(::deletePayment)
-        router.delete("/payment/:referenceNumber/:email").handler(::deleteMyPayment)
+        router.post("/payments").handler(::createPayment)
+        router.get("/payments/:pageNumber").handler(::getPayments)
+        router.get("/payments/:term/:pageNumber").handler(::searchPayment)
+        router.put("/payments/:referenceNumber").handler(::updatePayment)
+        router.delete("/payments/:referenceNumber").handler(::deletePayment)
+        router.delete("/payments/:referenceNumber/:email").handler(::deleteMyPayment)
         setTenantRoutes(router)
     }
 
@@ -41,26 +42,105 @@ open class PaymentService : TenantService() {
     }
 
     private fun getPayments(rc: RoutingContext) {
-        logger.info("getPayments() -->")
-        execute("createPayment", rc, "user", { user, body, response ->
+        logger.info("searchPayment() -->")
+        execute("searchPayment", rc, "user", { user, body, response ->
             val limit = 20
             val pageNumber = Integer.valueOf(rc.request().getParam("pageNumber")) - 1
             val skip = pageNumber * limit
             val pipeline = JsonArray()
-                .add(JsonObject.of("\$match", JsonObject.of("from", user.getString("email"))))
-                .add(JsonObject.of("\$count","total_documents"))
+//                .add(JsonObject.of("\$match", JsonObject.of("from", user.getString("email"))))
+                .add(
+                    JsonObject.of(
+                        "\$lookup", JsonObject
+                            .of(
+                                "collection", "app_users",
+                                "localField", "from",
+                                "foreignField", "email",
+                                "as", "user"
+                            )
+                    )
+                )
+                .add(
+                    JsonObject.of(
+                        "\$project", JsonObject
+                            .of(
+                                "_id", "\$_id",
+                                "title", "\$title",
+                                "description", "\$description",
+                                "transactionCode", "\$transactionCode",
+                                "amount", "\$amount",
+                                "firstName", "user.firstname",
+                                "lastName", "user.lastname",
+                                "phoneNumber", "user.phoneNumber",
+                                "email", "user.email"
+                            )
+                    )
+                )
                 .add(JsonObject.of("\$skip", skip))
                 .add(JsonObject.of("\$limit", limit))
             dbUtil.aggregate(Collections.PAYMENTS.toString(), pipeline, {
-                it.put("paging",JsonObject.of("page",pageNumber,"total_docs",it.getString("total_docs")))
-                it.remove("total_docs")
-                response.end(getResponse(OK.code(), "Successful", it))
+                it.add(JsonObject.of("paging", JsonObject.of("page", pageNumber)))
+                response.end(getResponse(OK.code(), "Successful", JsonObject.of("data", it)))
             }, {
                 logger.error("getPayments(${it.message} -> ${it.cause})")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
         })
         logger.info("getPayments() <--")
+    }
+
+    private fun searchPayment(rc: RoutingContext) {
+        logger.info("searchPayment() -->")
+        execute("searchPayment", rc, "user", { user, body, response ->
+            val pageNumber = Integer.valueOf(rc.request().getParam("pageNumber")) - 1
+            val term = rc.request().getParam("term") ?: ""
+            val limit = 20
+            val skip = pageNumber * limit
+            if (term.isEmpty()) {
+                response.end(getResponse(BAD_REQUEST.code(), "Expected search term"))
+                return@execute
+            }
+            val query = JsonObject.of("\$text", JsonObject.of("\$search", term))
+            val pipeline = JsonArray()
+                .add(JsonObject.of("\$match", query))
+                .add(
+                    JsonObject.of(
+                        "\$lookup", JsonObject
+                            .of(
+                                "collection", "app_users",
+                                "localField", "from",
+                                "foreignField", "email",
+                                "as", "user"
+                            )
+                    )
+                )
+                .add(
+                    JsonObject.of(
+                        "\$project", JsonObject
+                            .of(
+                                "_id", "\$_id",
+                                "title", "\$title",
+                                "description", "\$description",
+                                "transactionCode", "\$transactionCode",
+                                "amount", "\$amount",
+                                "firstName", "user.firstname",
+                                "lastName", "user.lastname",
+                                "phoneNumber", "user.phoneNumber",
+                                "email", "user.email"
+                            )
+                    )
+                )
+                .add(JsonObject.of("\$skip", skip))
+                .add(JsonObject.of("\$limit", limit))
+            dbUtil.aggregate(Collections.PAYMENTS.toString(), pipeline, {
+                it.add(JsonObject.of("paging", JsonObject.of("page", pageNumber)))
+                response.end(getResponse(OK.code(), "Successful", JsonObject.of("data", it)))
+            }, {
+                logger.error("searchPayment(${it.message} -> ${it.cause})")
+                response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
+            })
+        })
+        logger.info("searchPayment() <--")
     }
 
     private fun updatePayment(rc: RoutingContext) {

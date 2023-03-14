@@ -14,23 +14,26 @@ open class TaskService : CommunicationService() {
         router.delete("/tasks/:id").handler(::deleteTask)
         setCommunicationRoutes(router)
     }
-    private fun createTask(rc:RoutingContext){
+
+    private fun createTask(rc: RoutingContext) {
+        logger.info("createTask() -->")
+        logger.info("createTask() <--")
+    }
+
+    private fun getTasks(rc: RoutingContext) {
+        logger.info("getTasks() -->")
+        logger.info("getTasks() <--")
+    }
+
+    private fun searchTask(rc: RoutingContext) {
 
     }
 
-    private fun getTasks(rc:RoutingContext){
+    private fun updateTask(rc: RoutingContext) {
 
     }
 
-    private fun searchTask(rc:RoutingContext){
-
-    }
-
-    private fun updateTask(rc:RoutingContext){
-
-    }
-
-    private fun deleteTask(rc:RoutingContext){
+    private fun deleteTask(rc: RoutingContext) {
 
     }
 

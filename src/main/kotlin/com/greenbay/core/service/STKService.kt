@@ -17,6 +17,10 @@ open class STKService : AuthService() {
             .end("STK")
     }
     private fun callback(rc:RoutingContext){
+	logger.info("callback() -->") 
+	execute("callback",rc,"admin",{user,body,response -> 
 
+	})
+	logger.info("callback() <--") 
     }
 }

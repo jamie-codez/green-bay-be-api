@@ -103,7 +103,6 @@ open class BaseUtils {
             }
             inject(user, body, response)
             logger.info("bodyHandler($task) <--")
-
         }
 
         /**

@@ -19,6 +19,7 @@ open class PaymentService : TenantService() {
         router.get("/payment/:pageNumber").handler(::getPayments)
         router.put("/payment/:referenceNumber").handler(::updatePayment)
         router.delete("/payment/:referenceNumber").handler(::deletePayment)
+        router.delete("/payment/:referenceNumber/:email").handler(::deleteMyPayment)
         setTenantRoutes(router)
     }
 
@@ -46,6 +47,7 @@ open class PaymentService : TenantService() {
             val pageNumber = Integer.valueOf(rc.request().getParam("pageNumber")) - 1
             val skip = pageNumber * limit
             val pipeline = JsonArray()
+                .add(JsonObject.of("\$match", JsonObject.of("from", user.getString("email"))))
                 .add(JsonObject.of("\$skip", skip))
                 .add(JsonObject.of("\$limit", limit))
             dbUtil.aggregate(Collections.PAYMENTS.toString(), pipeline, {
@@ -96,6 +98,30 @@ open class PaymentService : TenantService() {
                 logger.error("deletePayment(${it.message} -> ${it.cause}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
+        })
+        logger.info("deletePayment() <--")
+    }
+
+    private fun deleteMyPayment(rc: RoutingContext) {
+        logger.info("deleteMyPayment() -->")
+        execute("deleteMyPayment", rc, "admin", { user, body, response ->
+            val referenceNumber = rc.request().getParam("referenceNumber") ?: ""
+            val email = rc.request().getParam("email") ?: ""
+            if (referenceNumber.isEmpty() || email.isEmpty()) {
+                response.end(getResponse(BAD_REQUEST.code(), "Expected parameter referenceNumber and email"))
+                return@execute
+            }
+            if (user.getString("email") == email) {
+                val query = JsonObject.of("referenceNumber", referenceNumber, "from", email)
+                dbUtil.findOneAndDelete(Collections.PAYMENTS.toString(), query, {
+                    response.end(getResponse(OK.code(), "Payment deleted successfully", it))
+                }, {
+                    logger.error("deletePayment(${it.message} -> ${it.cause}) <--")
+                    response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
+                })
+            } else {
+                response.end(getResponse(BAD_REQUEST.code(), "You can only delete your own data"))
+            }
         })
         logger.info("deletePayment() <--")
     }

@@ -45,6 +45,24 @@ open class CommunicationService : PaymentService() {
             val pageSize = Integer.valueOf(rc.request().getParam("pageNumber")) - 1
             val skip = pageSize * limit
             val pipeline = JsonArray()
+                .add(
+                    JsonObject.of(
+                        "\$lookup", JsonObject.of(
+                            "collection", "app_users",
+                            "localField", "to",
+                            "foreignField", "email",
+                            "as", "user"
+                        )
+                    )
+                )
+                .add(
+                    JsonObject.of(
+                        "\$unwind", JsonObject.of(
+                            "path", "\$user",
+                            "preserveNullAndEmptyArrays", true
+                        )
+                    )
+                )
                 .add(JsonObject.of("\$limit", limit))
                 .add(JsonObject.of("\$skip", skip))
             dbUtil.aggregate(Collections.COMMUNICATIONS.toString(), pipeline, {

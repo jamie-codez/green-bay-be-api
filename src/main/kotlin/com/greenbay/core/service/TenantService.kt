@@ -13,10 +13,11 @@ import io.vertx.ext.web.RoutingContext
 open class TenantService : HouseService() {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
     fun setTenantRoutes(router: Router) {
-        router.post("/tenant").handler(::createTenant)
-        router.get("/tenant/:pageNumber").handler(::getTenants)
-        router.put("/tenant/:client").handler(::updateTenant)
-        router.delete("/tenant/:client").handler(::deleteTenant)
+        router.post("/tenants").handler(::createTenant)
+        router.get("/tenants/:pageNumber").handler(::getTenants)
+        router.get("/tenants/:term/pageNumber").handler(::searchTenant)
+        router.put("/tenants/:client").handler(::updateTenant)
+        router.delete("/tenants/:client").handler(::deleteTenant)
         setHouseRoutes(router)
     }
 
@@ -38,42 +39,153 @@ open class TenantService : HouseService() {
                             val tenant = JsonObject.of("user", client, "house", house)
                             dbUtil.save(Collections.TENANTS.toString(), tenant, {
                                 response.end(getResponse(CREATED.code(), "Tenant created successfully"))
-                            }, {error->
+                            }, { error ->
                                 logger.error("createTenant(${error.message}) <--")
-                                response.end(getResponse(INTERNAL_SERVER_ERROR.code(),"Error occurred try again"))
+                                response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
                             })
                         },
-                        {mError->
+                        { mError ->
                             logger.error("createTenant(${mError.message}) <--")
-                            response.end(getResponse(INTERNAL_SERVER_ERROR.code(),"Error occurred try again"))
+                            response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
                         })
                 },
-                {kError->
+                { kError ->
                     logger.error("createTenant(${kError.message}) <--")
-                    response.end(getResponse(INTERNAL_SERVER_ERROR.code(),"Error occurred try again"))
+                    response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
                 })
-        }, "user", "house")
+        }, "client", "houseNumber")
         logger.info("createTenant() <--")
     }
 
     private fun getTenants(rc: RoutingContext) {
         logger.info("getTenants() -->")
         execute("getTenants", rc, "admin", { _, _, response ->
-            val pageNumber = Integer.valueOf(rc.request().getParam("pageNumber"))
+            val pageNumber = Integer.valueOf(rc.request().getParam("pageNumber"))-1
             val limit = 20
             val skip = pageNumber * limit
             val pipeline = JsonArray()
+                .add(JsonObject.of("\$lookup",JsonObject
+                    .of(
+                        "collection","app_users",
+                        "localField","client",
+                        "foreignField","email",
+                        "as","user"
+                    )
+                ))
+                .add(JsonObject.of("\$lookup",JsonObject
+                    .of(
+                        "collection","houses",
+                        "localField","houseNumber",
+                        "foreignField","houseNumber",
+                        "as","house"
+                    )
+                ))
+                .add(JsonObject.of("\$unwind",JsonObject
+                    .of(
+                        "path","\$user",
+                        "preserveNullAndEmptyArrays",true
+                    )
+                ))
+                .add(JsonObject.of("\$unwind",JsonObject
+                    .of(
+                        "path","\$house",
+                        "preserveNullAndEmptyArrays",true
+                    )
+                ))
+                .add(JsonObject.of("\$project",JsonObject
+                    .of(
+                        "_id","\$_id",
+                        "firstName","\$user.firstName",
+                        "lastName","\$user.lastName",
+                        "email","\$user.email",
+                        "phone","\$user.phoneNumber",
+                        "houseNumber","\$house.houseNumber",
+                        "rent","\$house.rent",
+                        "deposit","\$house.deposit",
+                        "floorNumber","\$house.floorNumber"
+                    )
+                ))
                 .add(JsonObject.of("\$skip", skip))
                 .add(JsonObject.of("\$limit", limit))
                 .add(JsonObject.of("\$sort", 1))
             dbUtil.aggregate(Collections.TENANTS.toString(), pipeline, {
-                response.end(getResponse(OK.code(), "Successful", it))
+                it.add(JsonObject.of("page", pageNumber, "sorted", false))
+                response.end(getResponse(OK.code(), "Successful", JsonObject.of("data", it)))
             }, {
-                logger.error("getTenants() <--")
+                logger.error("getTenants(${it.cause}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
         })
         logger.info("getTenants() <--")
+    }
+
+    private fun searchTenant(rc: RoutingContext){
+        logger.info("searchTenants() -->")
+        execute("searchTenants", rc, "admin", { _, _, response ->
+            val pageNumber = Integer.valueOf(rc.request().getParam("pageNumber"))-1
+            val term = rc.request().getParam("term")?:""
+            val limit = 20
+            val skip = pageNumber * limit
+            if (term.isEmpty()){
+                response.end(getResponse(BAD_REQUEST.code(),"Expected search term"))
+                return@execute
+            }
+            val query = JsonObject.of("\$text",JsonObject.of("\$search",term))
+            val pipeline = JsonArray()
+                .add(JsonObject.of("\$lookup",JsonObject
+                    .of(
+                        "collection","app_users",
+                        "localField","client",
+                        "foreignField","email",
+                        "as","user"
+                    )
+                ))
+                .add(JsonObject.of("\$lookup",JsonObject
+                    .of(
+                        "collection","houses",
+                        "localField","houseNumber",
+                        "foreignField","houseNumber",
+                        "as","house"
+                    )
+                ))
+                .add(JsonObject.of("\$unwind",JsonObject
+                    .of(
+                        "path","\$user",
+                        "preserveNullAndEmptyArrays",true
+                    )
+                ))
+                .add(JsonObject.of("\$unwind",JsonObject
+                    .of(
+                        "path","\$house",
+                        "preserveNullAndEmptyArrays",true
+                    )
+                ))
+                .add(JsonObject.of("\$match",query))
+                .add(JsonObject.of("\$project",JsonObject
+                    .of(
+                        "_id","\$_id",
+                        "firstName","\$user.firstName",
+                        "lastName","\$user.lastName",
+                        "email","\$user.email",
+                        "phone","\$user.phoneNumber",
+                        "houseNumber","\$house.houseNumber",
+                        "rent","\$house.rent",
+                        "deposit","\$house.deposit",
+                        "floorNumber","\$house.floorNumber"
+                    )
+                ))
+                .add(JsonObject.of("\$skip", skip))
+                .add(JsonObject.of("\$limit", limit))
+                .add(JsonObject.of("\$sort", 1))
+            dbUtil.aggregate(Collections.TENANTS.toString(), pipeline, {
+                it.add(JsonObject.of("page", pageNumber, "sorted", false))
+                response.end(getResponse(OK.code(), "Successful", JsonObject.of("data", it)))
+            }, {
+                logger.error("searchTenants(${it.cause}) <--")
+                response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
+            })
+        })
+        logger.info("searchTenants() <--")
     }
 
     private fun updateTenant(rc: RoutingContext) {

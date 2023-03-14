@@ -43,7 +43,7 @@ open class HouseService : UserService() {
                 logger.error("createHouse(${it.cause} checking) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "House already exists"))
             })
-        }, "houseNumber", "rent", "deposit")
+        }, "houseNumber", "rent", "deposit","floorNo")
         logger.info("createHouse() <--")
     }
 

@@ -105,8 +105,6 @@ class DatabaseUtils(vertx: Vertx) {
         success: (result: ArrayList<JsonObject?>) -> Unit,
         fail: (throwable: Throwable) -> Unit
     ) {
-        pipeline.add(JsonObject.of("allowDiskUse", true))
-        pipeline.add(JsonObject.of("\$count","items"))
         val results = ArrayList<JsonObject?>()
         getDBClient().aggregate(collection, pipeline).handler {
             logger.info("aggregate(streaming data) -->")

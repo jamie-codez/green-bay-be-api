@@ -5,6 +5,7 @@ import io.vertx.core.json.JsonObject
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.logging.HttpLoggingInterceptor
+import org.json.JSONObject
 import java.sql.Time
 import java.util.Base64
 import java.util.concurrent.TimeUnit
@@ -27,6 +28,34 @@ class Mpesa {
             val response = client.newCall(request).execute()
             val jsonResponse = JsonObject.mapFrom(response.body?.string())
             return jsonResponse.getString("access-token")
+        }
+
+        fun express(payload:JsonObject): JSONObject {
+            val client =  client()
+            val mediaType = "application/json".toMediaTypeOrNull();
+            val body = RequestBody.create(mediaType,payload.encode() )
+            val request = Request.Builder()
+                .url("https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest")
+                .method("POST", body)
+                .addHeader("Content-Type", "application/json")
+                .addHeader("Authorization", "Bearer ${authenticate("","")}")
+                .build()
+            val response = client.newCall(request).execute()
+            return JSONObject(response.body?.string())
+        }
+
+        fun registerCallback(payload: JsonObject): JSONObject {
+            val client =  client()
+            val mediaType = "application/json".toMediaTypeOrNull();
+            val body = RequestBody.create(mediaType,payload.encode())
+            val request = Request.Builder()
+                .url("https://sandbox.safaricom.co.ke/mpesa/c2b/v1/registerurl")
+                .method("POST", body)
+                .addHeader("Content-Type", "application/json")
+                .addHeader("Authorization", "Bearer ${authenticate("","")}")
+                .build();
+            val response = client.newCall(request).execute()
+            return JSONObject(response.body?.string())
         }
 
         fun client(): OkHttpClient =

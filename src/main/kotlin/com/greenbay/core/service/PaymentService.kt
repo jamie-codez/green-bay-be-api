@@ -47,19 +47,22 @@ open class PaymentService : TenantService() {
             val limit = 20
             val pageNumber = Integer.valueOf(rc.request().getParam("pageNumber")) - 1
             val skip = pageNumber * limit
+            val owner = body.getString("owner") ?: ""
             val pipeline = JsonArray()
-//                .add(JsonObject.of("\$match", JsonObject.of("from", user.getString("email"))))
-                .add(
-                    JsonObject.of(
-                        "\$lookup", JsonObject
-                            .of(
-                                "collection", "app_users",
-                                "localField", "from",
-                                "foreignField", "email",
-                                "as", "user"
-                            )
-                    )
+            if (owner == "mine") {
+                pipeline.add(JsonObject.of("\$match", JsonObject.of("from", user.getString("email"))))
+            }
+            pipeline.add(
+                JsonObject.of(
+                    "\$lookup", JsonObject
+                        .of(
+                            "collection", "app_users",
+                            "localField", "from",
+                            "foreignField", "email",
+                            "as", "user"
+                        )
                 )
+            )
                 .add(
                     JsonObject.of(
                         "\$project", JsonObject
@@ -85,7 +88,7 @@ open class PaymentService : TenantService() {
                 logger.error("getPayments(${it.message} -> ${it.cause})")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
-        })
+        }, "owner")
         logger.info("getPayments() <--")
     }
 
@@ -208,5 +211,28 @@ open class PaymentService : TenantService() {
         })
         logger.info("deletePayment() <--")
     }
+
+    //            {
+//                "BusinessShortCode": 174379,
+//                "Password": "MTc0Mzc5YmZiMjc5ZjlhYTliZGJjZjE1OGU5N2RkNzFhNDY3Y2QyZTBjODkzMDU5YjEwZjc4ZTZiNzJhZGExZWQyYzkxOTIwMjMwMzE3MDAwMzM0",
+//                "Timestamp": "20230317000334",
+//                "TransactionType": "CustomerPayBillOnline",
+//                "Amount": 1,
+//                "PartyA": 254708374149,
+//                "PartyB": 174379,
+//                "PhoneNumber": 254708374149,
+//                "CallBackURL": "https://mydomain.com/path",
+//                "AccountReference": "CompanyXLTD",
+//                "TransactionDesc": "Payment of X"
+//            }
+
+//    {
+//        "ShortCode": 600989,
+//        "ResponseType": "Completed",
+//        "ConfirmationURL": "https://mydomain.com/confirmation",
+//        "ValidationURL": "https://mydomain.com/validation",
+//    }
+
+
 
 }

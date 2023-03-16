@@ -100,7 +100,7 @@ open class UserService : AbstractVerticle() {
                 response.end(getResponse(BAD_REQUEST.code(), "Expected param term"))
                 return@execute
             }
-            val query = JsonObject.of("\text", JsonObject.of("\$search", term))
+            val query = JsonObject.of("\$text", JsonObject.of("\$search", term))
             val pipeline = JsonArray()
                 .add(JsonObject.of("\$match", query))
                 .add(JsonObject.of("\$limit", limit))

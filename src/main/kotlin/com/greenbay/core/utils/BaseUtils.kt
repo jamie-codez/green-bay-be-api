@@ -106,6 +106,43 @@ open class BaseUtils {
         }
 
         /**
+         * Works same as execute but without user callback
+         */
+
+        fun execute(
+            task: String,
+            rc: RoutingContext,
+            inject: (body: JsonObject, response: HttpServerResponse) -> Unit,
+            vararg values: String
+        ) {
+            logger.info("execute($task) -->")
+            val resp = rc.response().apply {
+                statusCode = OK.code()
+                statusMessage = OK.reasonPhrase()
+            }.putHeader("Content-Type", "application/json")
+            val body = rc.body().asJsonObject()
+            if (body.isEmpty) {
+                resp.end(getResponse(BAD_REQUEST.code(), "Body cant be empty"))
+                return
+            }
+            if (body.encode().length / 1024 > MAX_BODY_SIZE) {
+                resp.end(
+                    getResponse(
+                        REQUEST_ENTITY_TOO_LARGE.code(),
+                        "Request body too large [${body.encode().length / 1024}MB]"
+                    )
+                )
+                return
+            }
+            if (hasValues(body, *values)) {
+                resp.end(getResponse(BAD_REQUEST.code(), "expected fields [${values.contentDeepToString()}]"))
+                return
+            }
+            inject(body, resp)
+            logger.info("execute($task) <--")
+        }
+
+        /**
          * checks if the body has the required fields
          */
         fun hasValues(body: JsonObject, vararg values: String): Boolean {
@@ -205,34 +242,38 @@ open class BaseUtils {
          */
         fun sendEmail(
             email: String,
-            subject: String,
-            messageText: String,
+            subjectText: String,
+            bodyText:String,
             htmlText: String? = null,
             attachment: MailAttachment? = null,
-            vertx: Vertx
+            vertx: Vertx,
+            success: () -> Unit,
+            fail: (throwable: Throwable) -> Unit
         ) {
-            val config = MailConfig()
-                .setPort(Integer.valueOf(System.getenv("GB_MAIL_PORT")))
-                .setHostname(System.getenv("GB_MAIL_HOST"))
-                .setSsl(true)
-                .setStarttls(StartTLSOptions.OPTIONAL)
-                .setUsername(System.getenv("GB_MAIL_USERNAME"))
-                .setPassword(System.getenv("GB_MAIL_PASSWORD"))
-                .setLogin(LoginOption.XOAUTH2)
-            val htmlString = String.format("<a href=\"http://%s\"> Activate account</a>", htmlText)
-            val client = MailClient.createShared(vertx, config, "mailme")
-            val message = MailMessage()
-                .setFrom("${System.getenv("GB_MAIL_ADDRESS")} (No reply)")
-                .setTo(email)
-                .setSubject(subject)
-                .setText(messageText)
-                .setHtml("Click link to reset password.$htmlString")
+            val config = MailConfig().apply {
+                port = Integer.valueOf(System.getenv("GB_MAIL_PORT"))
+                hostname = System.getenv("GB_MAIL_HOST")
+                isSsl = true
+                starttls = StartTLSOptions.REQUIRED
+                username = System.getenv("GB_MAIL_USERNAME")
+                password = System.getenv("GB_MAIL_PASSWORD")
+                login = LoginOption.XOAUTH2
+            }
+            val client = MailClient.createShared(vertx, config, "GB_MAIL_POOL")
+            val message = MailMessage().apply {
+                from = "${System.getenv("GB_MAIL_ADDRESS")} (No reply)"
+                to = listOf(email)
+                subject = subjectText
+                text = bodyText
+                html = htmlText
+            }
             client.sendMail(message) {
                 if (it.succeeded()) {
                     logger.info("INFO: Mail sent")
-
+                    success()
                 } else if (it.failed()) {
                     logger.error("ERROR: Mail not sent")
+                    fail(it.cause())
                 }
             }
 

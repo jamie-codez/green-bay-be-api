@@ -1,6 +1,7 @@
 package com.greenbay.core.service.mpesa
 
 import io.vertx.core.impl.logging.LoggerFactory
+import io.vertx.core.json.JsonObject
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.logging.HttpLoggingInterceptor
@@ -19,7 +20,13 @@ class Mpesa {
             val body = RequestBody.create("application/json".toMediaTypeOrNull(),"")
             val request = Request.Builder()
                 .url("")
-                .method("GET","")
+                .method("GET",body)
+                .addHeader("Authorization","Bearer $base64Password")
+                .addHeader("Accepts","application/json")
+                .build()
+            val response = client.newCall(request).execute()
+            val jsonResponse = JsonObject.mapFrom(response.body?.string())
+            return jsonResponse.getString("access-token")
         }
 
         fun client(): OkHttpClient =

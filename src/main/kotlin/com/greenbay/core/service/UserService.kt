@@ -67,8 +67,7 @@ open class UserService : AbstractVerticle() {
                 .add(JsonObject.of("\$skip", skip))
                 .add(JsonObject.of("\$limit", limit))
                 .add(JsonObject.of("\$sort", 1))
-                .add(
-                    JsonObject.of(
+                .add(JsonObject.of(
                         "\$project",
                         JsonObject.of(
                             "username", 1,
@@ -92,7 +91,7 @@ open class UserService : AbstractVerticle() {
 
     private fun searchUser(rc: RoutingContext) {
         logger.info("searchUser() -->")
-        execute("searchUser", rc, "admin", { user, body, response ->
+        execute("searchUser", rc, "admin", { _, _, response ->
             val term = rc.request().getParam("term") ?: ""
             val pageNumber = Integer.valueOf(rc.request().getParam("pageNumber")) - 1
             val limit = 20

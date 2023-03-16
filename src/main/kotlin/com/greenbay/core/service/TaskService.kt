@@ -207,7 +207,7 @@ open class TaskService : CommunicationService() {
 
     private fun deleteTask(rc: RoutingContext) {
         logger.info("deleteTask() -->")
-        execute("deleteTask", rc, "admin", { user, body, response ->
+        execute("deleteTask", rc, "admin", { _, _, response ->
             val id = rc.request().getParam("id") ?: ""
             if (id.isEmpty()) {
                 response.end(getResponse(BAD_REQUEST.code(), "Expected parameter id"))

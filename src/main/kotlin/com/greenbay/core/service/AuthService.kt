@@ -105,7 +105,7 @@ open class AuthService : TaskService() {
                     val mailBody = "Click link to reset password."
                     sendEmail(email, "Password Reset", mailBody, htmlString, vertx = this.vertx, success = {
                         logger.info("sendPasswordResetEmail(Mail sent) <--")
-                        response.end(getResponse(OK.code(),"Password reset email sent to you mail inbox"))
+                        response.end(getResponse(OK.code(), "Password reset email sent to you mail inbox"))
                     }, fail = { err ->
                         logger.error("sendPasswordResetEmail(${err.message}) <--", err)
                     })
@@ -127,26 +127,41 @@ open class AuthService : TaskService() {
 
     private fun resetPassword(rc: RoutingContext) {
         logger.info("resetPassword() -->")
-        execute("resetPassword",rc,{body, response ->
+        execute("resetPassword", rc, { body, response ->
             val query = JsonObject.of("email", body.getString("email"))
-            dbUtil.findOne(Collections.APP_USERS.toString(), query, {
-                if (it.isEmpty) {
-                    response.end(getResponse(NOT_FOUND.code(), "User not found"))
+            dbUtil.findOne(Collections.RESET_CODES.toString(), query, { res ->
+                if (res.isEmpty) {
+                    response.end(getResponse(OK.code(), "Reset link has already been used"))
                     return@findOne
                 }
-                val encodedPassword = BCryptPasswordEncoder().encode(body.getString("password"))
-                val update = JsonObject.of("\$set", JsonObject.of("password", encodedPassword))
-                dbUtil.findAndUpdate(Collections.APP_USERS.toString(), query, update, {
-                    response.end(getResponse(OK.code(), "Password updated successfully"))
-                }, { thr ->
-                    logger.error("resetPassword(${thr.cause}) <--")
+                dbUtil.findOne(Collections.APP_USERS.toString(), query, {
+                    if (it.isEmpty) {
+                        response.end(getResponse(NOT_FOUND.code(), "User not found"))
+                        return@findOne
+                    }
+                    val encodedPassword = BCryptPasswordEncoder().encode(body.getString("password"))
+                    val update = JsonObject.of("\$set", JsonObject.of("password", encodedPassword))
+                    dbUtil.findAndUpdate(Collections.APP_USERS.toString(), query, update, {
+                        dbUtil.findOneAndDelete(Collections.RESET_CODES.toString(), query, { re ->
+                            logger.info("resetPassword(${re} delete successful) <--")
+                        }, { err ->
+                            logger.error("resetPassword(${err.cause} delete code) <--")
+                        })
+                        response.end(getResponse(OK.code(), "Password updated successfully"))
+                    }, { thr ->
+                        logger.error("resetPassword(${thr.cause}) <--")
+                        response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
+                    })
+                }, {
+                    logger.error("resetPassword(${it.cause}) <--")
                     response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
                 })
             }, {
                 logger.error("resetPassword(${it.cause}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
-        },"email","password")
+
+        }, "email", "password")
         logger.info("resetPassword() <--")
     }
 

@@ -1,7 +1,9 @@
 package com.greenbay.core.service
 
+import com.greenbay.core.service.mpesa.Mpesa
 import com.greenbay.core.utils.BaseUtils.Companion.execute
 import io.vertx.core.impl.logging.LoggerFactory
+import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
 
@@ -21,6 +23,7 @@ open class STKService : AuthService() {
         logger.info("callback() -->")
         execute("callback", rc, "admin", { user, body, response ->
 
+            Mpesa.registerCallback(JsonObject())
         })
         logger.info("callback() <--")
     }

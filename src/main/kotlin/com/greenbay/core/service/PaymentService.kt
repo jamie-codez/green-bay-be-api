@@ -56,7 +56,7 @@ open class PaymentService : TenantService() {
                 JsonObject.of(
                     "\$lookup", JsonObject
                         .of(
-                            "collection", "app_users",
+                            "from", "app_users",
                             "localField", "from",
                             "foreignField", "email",
                             "as", "user"
@@ -110,7 +110,7 @@ open class PaymentService : TenantService() {
                     JsonObject.of(
                         "\$lookup", JsonObject
                             .of(
-                                "collection", "app_users",
+                                "from", "app_users",
                                 "localField", "from",
                                 "foreignField", "email",
                                 "as", "user"

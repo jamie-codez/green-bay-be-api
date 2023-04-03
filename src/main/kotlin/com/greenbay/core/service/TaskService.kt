@@ -51,7 +51,7 @@ open class TaskService : CommunicationService() {
                     JsonObject.of(
                         "\$lookup", JsonObject
                             .of(
-                                "collection", "app_users",
+                                "from", "app_users",
                                 "localField", "to",
                                 "foreignField", "email",
                                 "as", "client"
@@ -61,7 +61,7 @@ open class TaskService : CommunicationService() {
                 .add(
                     JsonObject.of(
                         "\$lookup", JsonObject.of(
-                            "collection", "app_users",
+                            "from", "app_users",
                             "localField", "createdBy",
                             "foreignField", "email",
                             "as", "createdBy"
@@ -123,7 +123,7 @@ open class TaskService : CommunicationService() {
                     JsonObject.of(
                         "\$lookup", JsonObject
                             .of(
-                                "collection", "app_users",
+                                "from", "app_users",
                                 "localField", "to",
                                 "foreignField", "email",
                                 "as", "client"
@@ -133,7 +133,7 @@ open class TaskService : CommunicationService() {
                 .add(
                     JsonObject.of(
                         "\$lookup", JsonObject.of(
-                            "collection", "app_users",
+                            "from", "app_users",
                             "localField", "createdBy",
                             "foreignField", "email",
                             "as", "createdBy"

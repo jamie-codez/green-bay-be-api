@@ -66,7 +66,7 @@ open class TenantService : HouseService() {
             val pipeline = JsonArray()
                 .add(JsonObject.of("\$lookup",JsonObject
                     .of(
-                        "collection","app_users",
+                        "from","app_users",
                         "localField","client",
                         "foreignField","email",
                         "as","user"
@@ -74,7 +74,7 @@ open class TenantService : HouseService() {
                 ))
                 .add(JsonObject.of("\$lookup",JsonObject
                     .of(
-                        "collection","houses",
+                        "from","houses",
                         "localField","houseNumber",
                         "foreignField","houseNumber",
                         "as","house"
@@ -134,7 +134,7 @@ open class TenantService : HouseService() {
             val pipeline = JsonArray()
                 .add(JsonObject.of("\$lookup",JsonObject
                     .of(
-                        "collection","app_users",
+                        "from","app_users",
                         "localField","client",
                         "foreignField","email",
                         "as","user"
@@ -142,7 +142,7 @@ open class TenantService : HouseService() {
                 ))
                 .add(JsonObject.of("\$lookup",JsonObject
                     .of(
-                        "collection","houses",
+                        "from","houses",
                         "localField","houseNumber",
                         "foreignField","houseNumber",
                         "as","house"

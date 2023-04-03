@@ -39,7 +39,8 @@ open class UserService : AbstractVerticle() {
                     response.end(getResponse(CONFLICT.code(), "User already exists"))
                 } else {
                     body.put("addedBy", user.getString("email"))
-                    body.put("addedOn", Date(System.currentTimeMillis()))
+                        .put("roles", JsonObject.of("user", true))
+                        .put("addedOn", Date(System.currentTimeMillis()))
                     val encodedPassword = BCryptPasswordEncoder().encode(body.getString("password"))
                     body.remove("password")
                     body.put("password", encodedPassword)
@@ -60,35 +61,29 @@ open class UserService : AbstractVerticle() {
 
     private fun createAdmin(rc: RoutingContext) {
         logger.info("createAdmin() -->")
-        execute("createAdmin", rc, "", { _, body, response ->
-            body.put("username", "admin user").put("email", "admin@admin.com").put("phone", "+254712345678")
-                .put("idNumber", "1234567890").put("password", "admin1234").put("profileImage", "")
-                .put("email", "admin@admin.com")
-                .put("addedOn", Date(System.currentTimeMillis()))
+        execute("createAdmin", rc, { body, response ->
             dbUtil.findOne(Collections.APP_USERS.toString(), JsonObject.of("email", body.getString("email")), {
                 if (!it.isEmpty) {
                     response.end(getResponse(CONFLICT.code(), "User already exists"))
                 } else {
+                    body.put("addedBy", body.getString("email"))
+                        .put("roles", JsonObject.of("user", true, "admin", true, "manager", true))
+                        .put("addedOn", Date(System.currentTimeMillis()))
                     val encodedPassword = BCryptPasswordEncoder().encode(body.getString("password"))
                     body.remove("password")
                     body.put("password", encodedPassword)
                     dbUtil.save(Collections.APP_USERS.toString(), body, {
-                        response.end(
-                            getResponse(
-                                CREATED.code(),
-                                "Admin created successfully, now attach roles,Delete this user after setup"
-                            )
-                        )
+                        response.end(getResponse(CREATED.code(), "User created successfully, now attach roles"))
                     }, { error ->
-                        logger.error("createAdmin(${error.cause}) <--")
+                        logger.error("createAdmin(${error.message}) <--", error.cause?.cause)
                         response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
                     })
                 }
             }, {
-                logger.error("createAdmin(${it.cause}) <--")
+                logger.error("createAdmin(${it.message}) <--", it.cause?.cause)
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
-        })
+        }, "username", "email", "phone", "idNumber", "password", "profileImage")
         logger.info("createAdmin() <--")
     }
 
@@ -145,7 +140,7 @@ open class UserService : AbstractVerticle() {
                 val paging = JsonObject.of("page", pageNumber, "sorted", false)
                 response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
-                logger.error("searchUser(${it.cause} -> pipeline) <--")
+                logger.error("searchUser(${it.message} -> pipeline) <--", it.cause?.cause)
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
         })
@@ -162,7 +157,7 @@ open class UserService : AbstractVerticle() {
             dbUtil.findAndUpdate(Collections.APP_USERS.toString(), JsonObject.of("email", email), body, {
                 response.end(getResponse(OK.code(), "Successfully updated user", it))
             }, {
-                logger.error("updateUser(${it.cause}) <--")
+                logger.error("updateUser(${it.message}) <--", it.cause?.cause)
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
         })
@@ -172,6 +167,27 @@ open class UserService : AbstractVerticle() {
     private fun deleteUser(rc: RoutingContext) {
         logger.info("deleteUser() -->")
         execute("deleteUser", rc, "user", { _, _, response ->
+            val email = rc.request().getParam("email")
+            if (email.isNullOrEmpty()) {
+                response.end(getResponse(BAD_REQUEST.code(), "Expected param email"))
+                return@execute
+            }
+            val query = JsonObject.of("email", email)
+            dbUtil.findOne(Collections.APP_USERS.toString(), query, {
+                if (it.isEmpty) {
+                    response.end(getResponse(NOT_FOUND.code(), "User not found"))
+                    return@findOne
+                }
+                dbUtil.findOneAndDelete(Collections.APP_USERS.toString(), query, {
+                    response.end(getResponse(OK.code(), "User deleted successfully"))
+                }, { error ->
+                    logger.error("deleteUser(${error.message}) <--", error.cause?.cause)
+                    response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
+                })
+            }, {
+                logger.error("deleteUser(${it.message}) <--", it.cause?.cause)
+                response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error has occurred"))
+            })
             response.end(getResponse(OK.code(), "User Deleted successfully"))
         })
     }

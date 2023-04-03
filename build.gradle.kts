@@ -16,7 +16,7 @@ fun getVersionName(): Any {
         }
         val delim = "-"
         val list: List<String> = stdout.toString().split(delim)
-        list[0]
+        list[0].replace("\n","")
     }catch (ex:Exception){
         ""
     }
@@ -57,8 +57,9 @@ vertx{
 }
 
 application{
-    mainClassName = "io.vertx.core.Launcher"
-    mainClass.set(mainVerticleName)
+    executableDir = "jarFile"
+    val mainClassName = "io.vertx.core.Launcher"
+    mainClass.set(mainClassName)
 }
 
 tasks.test {

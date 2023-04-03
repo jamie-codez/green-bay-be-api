@@ -3,6 +3,7 @@ package com.greenbay.core.utils
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.greenbay.core.Collections
+import com.greenbay.core.service.UserService
 import io.netty.handler.codec.http.HttpResponseStatus.*
 import io.vertx.core.Vertx
 import io.vertx.core.http.HttpServerResponse
@@ -121,8 +122,11 @@ open class BaseUtils {
                 statusMessage = OK.reasonPhrase()
             }.putHeader("Content-Type", "application/json")
             val body = rc.body().asJsonObject()
-            if (body.isEmpty) {
-                resp.end(getResponse(BAD_REQUEST.code(), "Body cant be empty"))
+            if (task!="createAdmin"){
+                if (body.isEmpty) {
+                    resp.end(getResponse(BAD_REQUEST.code(), "Body cant be empty"))
+                    return
+                }
                 return
             }
             if (body.encode().length / 1024 > MAX_BODY_SIZE) {
@@ -135,7 +139,7 @@ open class BaseUtils {
                 return
             }
             if (hasValues(body, *values)) {
-                resp.end(getResponse(BAD_REQUEST.code(), "expected fields [${values.contentDeepToString()}]"))
+                resp.end(getResponse(BAD_REQUEST.code(), "expected fields ${values.contentDeepToString()}"))
                 return
             }
             inject(body, resp)
@@ -162,7 +166,7 @@ open class BaseUtils {
         /**
          * Verifies that the users is authenticated and authorized
          */
-        fun verifyToken(
+        private fun verifyToken(
             task: String,
             jwt: String,
             inject: (user: JsonObject) -> Unit,
@@ -186,7 +190,7 @@ open class BaseUtils {
                 res.end(getResponse(UNAUTHORIZED.code(), "Token expired"))
                 return
             }
-            if (issuer != System.getenv("ISSUER")) {
+            if (issuer != System.getenv("GB_JWT_ISSUER")) {
                 res.end(getResponse(BAD_REQUEST.code(), "Seems you are lost"))
                 return
             }

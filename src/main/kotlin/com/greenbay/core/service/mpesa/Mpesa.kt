@@ -14,7 +14,7 @@ class Mpesa {
     companion object {
         private val logger = LoggerFactory.getLogger(Mpesa::class.java.simpleName)
 
-        fun authenticate(customerId: String, customerSecret: String): String {
+        private fun authenticate(customerId: String, customerSecret: String): String {
             val password = "$customerId:$customerSecret"
             val base64Password = Base64.getEncoder().encodeToString(password.toByteArray())
             val client = client()
@@ -30,7 +30,7 @@ class Mpesa {
             return jsonResponse.getString("access-token")
         }
 
-        fun express(payload:JsonObject): JSONObject {
+        fun express(payload:JsonObject): JsonObject {
             val client =  client()
             val mediaType = "application/json".toMediaTypeOrNull();
             val body = RequestBody.create(mediaType,payload.encode() )
@@ -41,10 +41,10 @@ class Mpesa {
                 .addHeader("Authorization", "Bearer ${authenticate("","")}")
                 .build()
             val response = client.newCall(request).execute()
-            return JSONObject(response.body?.string())
+            return JsonObject(response.body?.string())
         }
 
-        fun registerCallback(payload: JsonObject): JSONObject {
+        fun registerCallback(payload: JsonObject): JsonObject {
             val client =  client()
             val mediaType = "application/json".toMediaTypeOrNull();
             val body = RequestBody.create(mediaType,payload.encode())
@@ -55,7 +55,7 @@ class Mpesa {
                 .addHeader("Authorization", "Bearer ${authenticate("","")}")
                 .build();
             val response = client.newCall(request).execute()
-            return JSONObject(response.body?.string())
+            return JsonObject(response.body?.string())
         }
 
         fun client(): OkHttpClient =

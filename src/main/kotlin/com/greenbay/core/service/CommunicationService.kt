@@ -69,8 +69,8 @@ open class CommunicationService : PaymentService() {
                 .add(JsonObject.of("\$limit", limit))
                 .add(JsonObject.of("\$skip", skip))
             dbUtil.aggregate(Collections.COMMUNICATIONS.toString(), pipeline, {
-                it.add(JsonObject.of("page", pageNumber, "sorted", false))
-                response.end(getResponse(OK.code(), "Successful", JsonObject.of("data", it)))
+                val paging = JsonObject.of("page", pageNumber, "sorted", false)
+                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
                 logger.error("getCommunications(${it.message} -> ${it.cause}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
@@ -114,8 +114,8 @@ open class CommunicationService : PaymentService() {
                 .add(JsonObject.of("\$limit", limit))
                 .add(JsonObject.of("\$skip", skip))
             dbUtil.aggregate(Collections.COMMUNICATIONS.toString(), pipeline, {
-                it.add(JsonObject.of("page", pageNumber, "sorted", false))
-                response.end(getResponse(OK.code(), "Successful", JsonObject.of("data", it)))
+                val paging = JsonObject.of("page", pageNumber, "sorted", false)
+                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
                 logger.error("searchCommunication(${it.message} -> ${it.cause}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))

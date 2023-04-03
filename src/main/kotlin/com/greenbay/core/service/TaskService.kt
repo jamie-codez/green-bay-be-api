@@ -95,8 +95,8 @@ open class TaskService : CommunicationService() {
                 .add(JsonObject.of("\$skip", skip))
                 .add(JsonObject.of("\$limit", limit))
             dbUtil.aggregate(Collections.TASKS.toString(), pipeline, {
-                it.add(JsonObject.of("paging", JsonObject.of("page", pageNumber, "sorted", false)))
-                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it)))
+                val paging = JsonObject.of("page", pageNumber, "sorted", false)
+                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
                 logger.error("getTasks(${it.cause}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred "))
@@ -167,8 +167,8 @@ open class TaskService : CommunicationService() {
                 .add(JsonObject.of("\$skip", skip))
                 .add(JsonObject.of("\$limit", limit))
             dbUtil.aggregate(Collections.TASKS.toString(), pipeline, {
-                it.add(JsonObject.of("paging", JsonObject.of("page", pageNumber, "sorted", false)))
-                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it)))
+                val paging = JsonObject.of("page", pageNumber, "sorted", false)
+                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
                 logger.error("getTasks(${it.cause}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred "))

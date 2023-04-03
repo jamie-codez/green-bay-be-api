@@ -24,6 +24,7 @@ open class UserService : AbstractVerticle() {
     fun setUserRoutes(router: Router) {
         dbUtil = DatabaseUtils(this.vertx)
         router.post("/users").handler(::createUser)
+        router.post("/users/admin").handler(::createAdmin)
         router.get("/users/:pageNumber").handler(::getUsers)
         router.get("/users/search/:term/:pageNumber").handler(::searchUser)
         router.put("/users/:email").handler(::updateUser)
@@ -114,8 +115,8 @@ open class UserService : AbstractVerticle() {
                     )
                 )
             dbUtil.aggregate(Collections.APP_USERS.toString(), pipeline, {
-                it.add(JsonObject.of("page", pageNumber, "sorted", true))
-                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it)))
+                val paging = JsonObject.of("page", pageNumber, "sorted", false)
+                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
                 logger.error("getUsers(${it.cause}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
@@ -141,8 +142,8 @@ open class UserService : AbstractVerticle() {
                 .add(JsonObject.of("\$limit", limit))
                 .add(JsonObject.of("\$skip", skip))
             dbUtil.aggregate(Collections.APP_USERS.toString(), pipeline, {
-                it.add(JsonObject.of("page", pageNumber, "sorted", false))
-                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it)))
+                val paging = JsonObject.of("page", pageNumber, "sorted", false)
+                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
                 logger.error("searchUser(${it.cause} -> pipeline) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))

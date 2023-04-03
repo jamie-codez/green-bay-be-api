@@ -74,8 +74,8 @@ open class HouseService : UserService() {
                     )
                 )
             dbUtil.aggregate(Collections.HOUSES.toString(), pipeline, {
-                val payload = JsonObject.of("data", it, "page", pageNumber, "sorted", true, "scheme", "asc")
-                response.end(getResponse(OK.code(), "Successful", payload))
+                val paging = JsonObject.of("page", pageNumber, "sorted", true)
+                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
                 logger.error("getHouses(${it.cause}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
@@ -116,8 +116,8 @@ open class HouseService : UserService() {
                     )
                 )
             dbUtil.aggregate(Collections.HOUSES.toString(), pipeline, {
-                val payload = JsonObject.of("data", it, "page", pageNumber, "sorted", true, "scheme", "asc")
-                response.end(getResponse(OK.code(), "Successful", payload))
+                val paging = JsonObject.of("page", pageNumber, "sorted", true)
+                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
                 logger.error("searchHouse(${it.cause}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))

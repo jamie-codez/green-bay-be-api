@@ -109,8 +109,8 @@ open class TenantService : HouseService() {
                 .add(JsonObject.of("\$limit", limit))
                 .add(JsonObject.of("\$sort", 1))
             dbUtil.aggregate(Collections.TENANTS.toString(), pipeline, {
-                it.add(JsonObject.of("page", pageNumber, "sorted", false))
-                response.end(getResponse(OK.code(), "Successful", JsonObject.of("data", it)))
+                val paging = JsonObject.of("page", pageNumber, "sorted", false)
+                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
                 logger.error("getTenants(${it.cause}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
@@ -178,8 +178,8 @@ open class TenantService : HouseService() {
                 .add(JsonObject.of("\$limit", limit))
                 .add(JsonObject.of("\$sort", 1))
             dbUtil.aggregate(Collections.TENANTS.toString(), pipeline, {
-                it.add(JsonObject.of("page", pageNumber, "sorted", false))
-                response.end(getResponse(OK.code(), "Successful", JsonObject.of("data", it)))
+                val paging = JsonObject.of("page", pageNumber, "sorted", false)
+                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
                 logger.error("searchTenants(${it.cause}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))

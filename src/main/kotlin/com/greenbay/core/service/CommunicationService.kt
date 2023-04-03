@@ -51,7 +51,7 @@ open class CommunicationService : PaymentService() {
                 .add(
                     JsonObject.of(
                         "\$lookup", JsonObject.of(
-                            "collection", "app_users",
+                            "from", "app_users",
                             "localField", "to",
                             "foreignField", "email",
                             "as", "user"
@@ -96,7 +96,7 @@ open class CommunicationService : PaymentService() {
                 .add(
                     JsonObject.of(
                         "\$lookup", JsonObject.of(
-                            "collection", "app_users",
+                            "from", "app_users",
                             "localField", "to",
                             "foreignField", "email",
                             "as", "user"

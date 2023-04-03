@@ -57,6 +57,40 @@ open class UserService : AbstractVerticle() {
         logger.info("createUser() <--")
     }
 
+    private fun createAdmin(rc: RoutingContext) {
+        logger.info("createAdmin() -->")
+        execute("createAdmin", rc, "", { _, body, response ->
+            body.put("username", "admin user").put("email", "admin@admin.com").put("phone", "+254712345678")
+                .put("idNumber", "1234567890").put("password", "admin1234").put("profileImage", "")
+                .put("email", "admin@admin.com")
+                .put("addedOn", Date(System.currentTimeMillis()))
+            dbUtil.findOne(Collections.APP_USERS.toString(), JsonObject.of("email", body.getString("email")), {
+                if (!it.isEmpty) {
+                    response.end(getResponse(CONFLICT.code(), "User already exists"))
+                } else {
+                    val encodedPassword = BCryptPasswordEncoder().encode(body.getString("password"))
+                    body.remove("password")
+                    body.put("password", encodedPassword)
+                    dbUtil.save(Collections.APP_USERS.toString(), body, {
+                        response.end(
+                            getResponse(
+                                CREATED.code(),
+                                "Admin created successfully, now attach roles,Delete this user after setup"
+                            )
+                        )
+                    }, { error ->
+                        logger.error("createAdmin(${error.cause}) <--")
+                        response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
+                    })
+                }
+            }, {
+                logger.error("createAdmin(${it.cause}) <--")
+                response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
+            })
+        })
+        logger.info("createAdmin() <--")
+    }
+
     private fun getUsers(rc: RoutingContext) {
         logger.info("getUsers() -->")
         execute("getUsers", rc, "admin", { _, _, response ->
@@ -67,7 +101,8 @@ open class UserService : AbstractVerticle() {
                 .add(JsonObject.of("\$skip", skip))
                 .add(JsonObject.of("\$limit", limit))
                 .add(JsonObject.of("\$sort", 1))
-                .add(JsonObject.of(
+                .add(
+                    JsonObject.of(
                         "\$project",
                         JsonObject.of(
                             "username", 1,
@@ -79,8 +114,8 @@ open class UserService : AbstractVerticle() {
                     )
                 )
             dbUtil.aggregate(Collections.APP_USERS.toString(), pipeline, {
-                it.add(JsonObject.of("page",pageNumber,"sorted",true))
-                response.end(getResponse(OK.code(), "Success", JsonObject.of("data",it)))
+                it.add(JsonObject.of("page", pageNumber, "sorted", true))
+                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it)))
             }, {
                 logger.error("getUsers(${it.cause}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
@@ -106,8 +141,8 @@ open class UserService : AbstractVerticle() {
                 .add(JsonObject.of("\$limit", limit))
                 .add(JsonObject.of("\$skip", skip))
             dbUtil.aggregate(Collections.APP_USERS.toString(), pipeline, {
-                it.add(JsonObject.of("page",pageNumber,"sorted",false))
-                response.end(getResponse(OK.code(),"Success", JsonObject.of("data",it)))
+                it.add(JsonObject.of("page", pageNumber, "sorted", false))
+                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it)))
             }, {
                 logger.error("searchUser(${it.cause} -> pipeline) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))

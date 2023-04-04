@@ -122,11 +122,9 @@ open class BaseUtils {
                 statusMessage = OK.reasonPhrase()
             }.putHeader("Content-Type", "application/json")
             val body = rc.body().asJsonObject()
-            if (task!="createAdmin"){
-                if (body.isEmpty) {
-                    resp.end(getResponse(BAD_REQUEST.code(), "Body cant be empty"))
-                    return
-                }
+            logger.info("body -> ${body.encodePrettily()}")
+            if (body.isEmpty) {
+                resp.end(getResponse(BAD_REQUEST.code(), "Body cant be empty"))
                 return
             }
             if (body.encode().length / 1024 > MAX_BODY_SIZE) {
@@ -138,7 +136,7 @@ open class BaseUtils {
                 )
                 return
             }
-            if (hasValues(body, *values)) {
+            if (!hasValues(body, *values)) {
                 resp.end(getResponse(BAD_REQUEST.code(), "expected fields ${values.contentDeepToString()}"))
                 return
             }
@@ -247,7 +245,7 @@ open class BaseUtils {
         fun sendEmail(
             email: String,
             subjectText: String,
-            bodyText:String,
+            bodyText: String,
             htmlText: String? = null,
             attachment: MailAttachment? = null,
             vertx: Vertx,

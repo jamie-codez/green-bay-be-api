@@ -4,6 +4,7 @@ import io.vertx.core.impl.logging.LoggerFactory
 import io.vertx.core.json.JsonObject
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.logging.HttpLoggingInterceptor
 import org.json.JSONObject
 import java.sql.Time
@@ -18,7 +19,7 @@ class Mpesa {
             val password = "$customerId:$customerSecret"
             val base64Password = Base64.getEncoder().encodeToString(password.toByteArray())
             val client = client()
-            val body = RequestBody.create("application/json".toMediaTypeOrNull(),"")
+            val body = "".toRequestBody("application/json".toMediaTypeOrNull())
             val request = Request.Builder()
                 .url("")
                 .method("GET",body)
@@ -33,7 +34,7 @@ class Mpesa {
         fun express(payload:JsonObject): JsonObject {
             val client =  client()
             val mediaType = "application/json".toMediaTypeOrNull();
-            val body = RequestBody.create(mediaType,payload.encode() )
+            val body = payload.encode().toRequestBody(mediaType)
             val request = Request.Builder()
                 .url("https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest")
                 .method("POST", body)
@@ -47,7 +48,7 @@ class Mpesa {
         fun registerCallback(payload: JsonObject): JsonObject {
             val client =  client()
             val mediaType = "application/json".toMediaTypeOrNull();
-            val body = RequestBody.create(mediaType,payload.encode())
+            val body = payload.encode().toRequestBody(mediaType)
             val request = Request.Builder()
                 .url("https://sandbox.safaricom.co.ke/mpesa/c2b/v1/registerurl")
                 .method("POST", body)

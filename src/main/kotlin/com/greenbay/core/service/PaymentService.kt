@@ -94,7 +94,7 @@ open class PaymentService : TenantService() {
 
     private fun searchPayment(rc: RoutingContext) {
         logger.info("searchPayment() -->")
-        execute("searchPayment", rc, "user", { user, body, response ->
+        execute("searchPayment", rc, "user", { _, _, response ->
             val pageNumber = Integer.valueOf(rc.request().getParam("pageNumber")) - 1
             val term = rc.request().getParam("term") ?: ""
             val limit = 20
@@ -171,7 +171,7 @@ open class PaymentService : TenantService() {
 
     private fun deletePayment(rc: RoutingContext) {
         logger.info("deletePayment() -->")
-        execute("deletePayment", rc, "admin", { user, body, response ->
+        execute("deletePayment", rc, "admin", { _, _, response ->
             val referenceNumber = rc.request().getParam("referenceNumber")
             if (referenceNumber.isNullOrEmpty()) {
                 response.end(getResponse(BAD_REQUEST.code(), "Expected parameter referenceNumber"))
@@ -190,7 +190,7 @@ open class PaymentService : TenantService() {
 
     private fun deleteMyPayment(rc: RoutingContext) {
         logger.info("deleteMyPayment() -->")
-        execute("deleteMyPayment", rc, "admin", { user, body, response ->
+        execute("deleteMyPayment", rc, "admin", { user, _, response ->
             val referenceNumber = rc.request().getParam("referenceNumber") ?: ""
             val email = rc.request().getParam("email") ?: ""
             if (referenceNumber.isEmpty() || email.isEmpty()) {

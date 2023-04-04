@@ -8,12 +8,20 @@ import io.vertx.ext.mongo.MongoClient
 
 class DatabaseUtils(vertx: Vertx) {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
-    private val dbClient = MongoClient.create(vertx, config())
+    private val dbClient = MongoClient.createShared(vertx, this.config())
 
     private fun config(): JsonObject =
         JsonObject.of(
+            "keepAlive",true,
+            "socketTimeoutMS",5_000,
+            "connectTimeoutMS",5_000,
+            "maxIdleTimeMS",90_000,
+            "autoReconnect",true,
+            "db_name", System.getenv("GB_DB_NAME"),
             "connection_string", System.getenv("GB_DB_CON_STRING"),
-            "db_name", System.getenv("GB_DB_NAME")
+            "username",System.getenv("GB_DB_USERNAME"),
+            "password",System.getenv("GB_MAIL_PASSWORD"),
+            "authSource","admin"
         )
 
     private fun getDBClient(): MongoClient = this.dbClient

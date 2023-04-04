@@ -278,7 +278,6 @@ open class BaseUtils {
                     fail(it.cause())
                 }
             }
-
         }
     }
 }

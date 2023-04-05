@@ -1,46 +1,53 @@
 version: "3"
 services:
-  mongodb:
-    image: mongo:5
-    container_name: mongodb
-    restart: always
+
+  mongo-db:
+    image: mongo:latest
+    restart: on-failure
     environment:
-      - MONGO_INITDB_DATABASE=greenbay_db
       - MONGO_INITDB_ROOT_USERNAME=root
       - MONGO_INITDB_ROOT_PASSWORD=toor
+      - MONGO_INITDB_DATABASE=root_db
     ports:
-      - "2717:27017"
+      - "9000:27017"
     volumes:
-      - data:/data/db
+      - mongo-data:/data/db:rw
+      - mongo-config:/data/configdb:rw
+
 
   greenbay_api:
-    container_name: greenbay_api
     build: .
-    restart: always
+    restart: on-failure
     depends_on:
-      mongodb:
+      mongo-db:
         condition: service_started
-    links:
-      - mongodb
     ports:
       - "80:8000"
     env_file:
       - .env
+    links:
+      - mongo-db:mongo-db
 
   mongo-express:
-    image: mongo-express:latest
-    restart: unless-stopped
+    image: mongo-express
+    restart: on-failure
     depends_on:
-        mongodb:
-          condition: service_started
-    ports:
-      - "5001:8081"
+      mongo-db:
+        condition: service_started
     environment:
+      - ME_CONFIG_MONGODB_SERVER=mongo-db
+      - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
       - ME_CONFIG_MONGODB_ADMINUSERNAME=root
       - ME_CONFIG_MONGODB_ADMINPASSWORD=toor
-      - ME_CONFIG_MONGODB_URL=mongodb://root@toor@localhost:2717
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=admin@123
+    ports:
+      - "5001:8081"
+    links:
+      - mongo-db:mongo-db
 
 volumes:
-  data:
+  mongo-data:
+  mongo-config:
 
 

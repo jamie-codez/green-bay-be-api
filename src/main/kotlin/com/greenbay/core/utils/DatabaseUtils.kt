@@ -6,11 +6,14 @@ import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.mongo.MongoClient
 
-class DatabaseUtils(vertx: Vertx) {
+class DatabaseUtils(val vertx: Vertx) {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
-    private val dbClient = MongoClient.createShared(vertx, this.config())
+    private lateinit var dbClient: MongoClient
+    init {
+        this.dbClient = MongoClient.createShared(this.vertx, this.getConfig())
+    }
 
-    private fun config(): JsonObject =
+    private fun getConfig(): JsonObject =
         JsonObject.of(
             "keepAlive",true,
             "socketTimeoutMS",5_000,
@@ -20,7 +23,7 @@ class DatabaseUtils(vertx: Vertx) {
             "db_name", System.getenv("GB_DB_NAME"),
             "connection_string", System.getenv("GB_DB_CON_STRING"),
             "username",System.getenv("GB_DB_USERNAME"),
-            "password",System.getenv("GB_MAIL_PASSWORD"),
+            "password",System.getenv("GB_DB_PASSWORD"),
             "authSource","admin"
         )
 
@@ -32,7 +35,7 @@ class DatabaseUtils(vertx: Vertx) {
         success: (result: String) -> Unit,
         fail: (throwable: Throwable) -> Unit
     ) {
-        getDBClient().save(collection, document) {
+        this.getDBClient().save(collection, document) {
             if (it.succeeded()) {
                 logger.info("Inserted successfully -> ${document.encodePrettily()} ")
                 success(it.result())
@@ -49,11 +52,12 @@ class DatabaseUtils(vertx: Vertx) {
         success: (result: List<JsonObject>) -> Unit,
         fail: (throwable: Throwable) -> Unit
     ) {
-        getDBClient().find(collection, query) {
+        this.getDBClient().find(collection, query) {
             if (it.succeeded()) {
                 logger.info("Retrieve successful")
                 success(it.result())
             } else {
+                logger.error("Error fetching documents")
                 fail(it.cause())
             }
         }
@@ -65,11 +69,12 @@ class DatabaseUtils(vertx: Vertx) {
         success: (result: JsonObject) -> Unit,
         fail: (throwable: Throwable) -> Unit
     ) {
-        getDBClient().findOne(collection, query, JsonObject()) {
+        this.getDBClient().findOne(collection, query, JsonObject()) {
             if (it.succeeded()) {
                 logger.info("Retrieve successful")
                 success(it.result())
             } else {
+                logger.error("Error fetching document")
                 fail(it.cause())
             }
         }
@@ -82,7 +87,7 @@ class DatabaseUtils(vertx: Vertx) {
         success: (result: JsonObject) -> Unit,
         fail: (throwable: Throwable) -> Unit
     ) {
-        getDBClient().findOneAndUpdate(collection, query, update) {
+        this.getDBClient().findOneAndUpdate(collection, query, update) {
             if (it.succeeded()) {
                 logger.info("Update successful ${query.encodePrettily()} -->")
                 success(it.result())
@@ -99,7 +104,7 @@ class DatabaseUtils(vertx: Vertx) {
         success: (result: JsonObject) -> Unit,
         fail: (throwable: Throwable) -> Unit
     ) {
-        getDBClient().findOneAndDelete(collection, query) {
+        this.getDBClient().findOneAndDelete(collection, query) {
             if (it.succeeded()) {
                 logger.info("Delete successful ${query.encodePrettily()} -->")
                 success(it.result())
@@ -117,7 +122,7 @@ class DatabaseUtils(vertx: Vertx) {
         fail: (throwable: Throwable) -> Unit
     ) {
         val results = ArrayList<JsonObject?>()
-        getDBClient().aggregate(collection, pipeline).handler {
+        this.getDBClient().aggregate(collection, pipeline).handler {
             logger.info("aggregate(streaming data) -->")
             results.add(it)
         }.endHandler {

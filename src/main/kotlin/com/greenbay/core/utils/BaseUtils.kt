@@ -5,6 +5,7 @@ import com.auth0.jwt.algorithms.Algorithm
 import com.greenbay.core.Collections
 import com.greenbay.core.service.UserService
 import io.netty.handler.codec.http.HttpResponseStatus.*
+import io.vertx.core.AbstractVerticle
 import io.vertx.core.Vertx
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.core.impl.logging.LoggerFactory
@@ -14,11 +15,11 @@ import io.vertx.ext.mail.*
 import io.vertx.ext.web.RoutingContext
 import java.util.*
 
-open class BaseUtils {
+open class BaseUtils{
     companion object {
+        private val dbUtil = DatabaseUtils(Vertx.vertx())
         private val logger = LoggerFactory.getLogger(BaseUtils::class.java)
         const val MAX_BODY_SIZE = 5_000
-        private val dbUtil = DatabaseUtils(Vertx.vertx())
         fun getResponse(code: Int, message: String): String =
             JsonObject.of("code", code, "message", message).encodePrettily()
 
@@ -222,7 +223,7 @@ open class BaseUtils {
                 }
                 inject(it)
             }, {
-                logger.error("getUser() --> ${it.cause}")
+                logger.error("getUser(${it.message}) --> ${it.cause}")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
             logger.info("getUser() <--")

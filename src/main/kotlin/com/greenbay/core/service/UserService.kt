@@ -19,10 +19,13 @@ import java.util.*
 
 open class UserService : AbstractVerticle() {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
-    lateinit var dbUtil: DatabaseUtils
+    var dbUtil: DatabaseUtils
+
+    init {
+        dbUtil  = DatabaseUtils(this.vertx)
+    }
 
     fun setUserRoutes(router: Router) {
-        dbUtil = DatabaseUtils(this.vertx)
         router.post("/users").handler(::createUser)
         router.post("/users/admin").handler(::createAdmin)
         router.get("/users/:pageNumber").handler(::getUsers)

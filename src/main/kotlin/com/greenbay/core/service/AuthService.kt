@@ -1,20 +1,12 @@
 package com.greenbay.core.service
 
 import com.greenbay.core.Collections
-import com.greenbay.core.utils.BaseUtils.Companion.MAX_BODY_SIZE
-import com.greenbay.core.utils.BaseUtils.Companion.execute
-import com.greenbay.core.utils.BaseUtils.Companion.generateAccessJwt
-import com.greenbay.core.utils.BaseUtils.Companion.generateRefreshJwt
-import com.greenbay.core.utils.BaseUtils.Companion.getResponse
-import com.greenbay.core.utils.BaseUtils.Companion.sendEmail
 import io.netty.handler.codec.http.HttpResponseStatus.*
 import io.vertx.core.impl.logging.LoggerFactory
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
-import org.springframework.security.crypto.bcrypt.BCrypt
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
-import org.springframework.security.crypto.password.PasswordEncoder
 import java.util.*
 
 @Suppress("LABEL_NAME_CLASH")
@@ -34,7 +26,7 @@ open class AuthService : TaskService() {
         logger.info("login() -->")
         execute("login", rc, { body, response ->
             val query = JsonObject.of("email", body.getJsonObject("email"))
-            dbUtil.findOne(Collections.APP_USERS.toString(), query, {
+            findOne(Collections.APP_USERS.toString(), query, {
                 if (it.isEmpty) {
                     response.end(getResponse(NOT_FOUND.code(), "User does not exists"))
                     return@findOne
@@ -44,7 +36,7 @@ open class AuthService : TaskService() {
                     val jwt = generateAccessJwt(it.getString("email"))
                     val refresh = generateRefreshJwt(it.getString("email"))
                     val session = JsonObject.of("email", it.getString("email"), "refreshToken", refresh)
-                    dbUtil.save(Collections.SESSIONS.toString(), session, {
+                    save(Collections.SESSIONS.toString(), session, {
                         response
                             .putHeader("access-token", jwt)
                             .putHeader("refresh-token", refresh)

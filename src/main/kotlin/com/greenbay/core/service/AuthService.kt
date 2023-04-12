@@ -63,7 +63,7 @@ open class AuthService : TaskService() {
                     response.end(getResponse(BAD_REQUEST.code(), "Operation not allowed"))
                     return@findOne
                 }
-                dbUtil.findOneAndDelete(Collections.SESSIONS.toString(), query, {
+                findOneAndDelete(Collections.SESSIONS.toString(), query, {
                     response.end(getResponse(OK.code(), "Logout successful"))
                 }, { thr ->
                     logger.error("logout(${thr.cause}) <--")

@@ -199,7 +199,7 @@ open class PaymentService : TenantService() {
             }
             if (user.getString("email") == email) {
                 val query = JsonObject.of("referenceNumber", referenceNumber, "from", email)
-                dbUtil.findOneAndDelete(Collections.PAYMENTS.toString(), query, {
+                findOneAndDelete(Collections.PAYMENTS.toString(), query, {
                     response.end(getResponse(OK.code(), "Payment deleted successfully", it))
                 }, {
                     logger.error("deletePayment(${it.message} -> ${it.cause}) <--")

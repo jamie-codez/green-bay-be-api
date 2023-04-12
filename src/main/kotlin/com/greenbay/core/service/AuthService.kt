@@ -58,7 +58,7 @@ open class AuthService : TaskService() {
         logger.info("logout() -->")
         execute("logout", rc, "user", { user, body, response ->
             val query = JsonObject.of("email", body)
-            dbUtil.findOne(Collections.SESSIONS.toString(), query, {
+            findOne(Collections.SESSIONS.toString(), query, {
                 if (it.getString("email") != user.getString("email")) {
                     response.end(getResponse(BAD_REQUEST.code(), "Operation not allowed"))
                     return@findOne

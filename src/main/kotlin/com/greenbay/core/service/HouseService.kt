@@ -27,7 +27,7 @@ open class HouseService : UserService() {
     private fun createHouse(rc: RoutingContext) {
         logger.info("createHouse() -->")
         execute("createHouse", rc, "admin", { user, body, response ->
-            dbUtil.findOne(Collections.HOUSES.toString(), JsonObject.of("houseNumber", body.getString("houseNumber")), {
+            findOne(Collections.HOUSES.toString(), JsonObject.of("houseNumber", body.getString("houseNumber")), {
                 if (!it.isEmpty) {
                     response.end(getResponse(CONFLICT.code(), "House already exists"))
                     return@findOne

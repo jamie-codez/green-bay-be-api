@@ -1,11 +1,8 @@
 package com.greenbay.core.service
 
 import com.greenbay.core.Collections
-import com.greenbay.core.utils.BaseUtils.Companion.execute
-import com.greenbay.core.utils.BaseUtils.Companion.getResponse
 import io.netty.handler.codec.http.HttpResponseStatus.*
 import io.vertx.core.impl.logging.LoggerFactory
-import io.vertx.core.json.Json
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Router
@@ -153,7 +150,7 @@ open class CommunicationService : PaymentService() {
                 return@execute
             }
             val query = JsonObject.of("id", id)
-            dbUtil.findOneAndDelete(Collections.COMMUNICATIONS.toString(), query, {
+            findOneAndDelete(Collections.COMMUNICATIONS.toString(), query, {
                 response.end(getResponse(OK.code(), "Successfully deleted communication"))
             }, {
                 logger.error("deleteCommunication(${it.message} -> ${it.cause}) <--")

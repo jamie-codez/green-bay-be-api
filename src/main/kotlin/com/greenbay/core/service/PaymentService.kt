@@ -31,7 +31,7 @@ open class PaymentService : TenantService() {
                 .put("from", user.getString("email"))
                 .put("dateCreated", Date(System.currentTimeMillis()))
                 .put("verified", false)
-            dbUtil.save(Collections.PAYMENTS.toString(), body, {
+            save(Collections.PAYMENTS.toString(), body, {
                 response.end(getResponse(OK.code(), "Payment recorded successfully"))
             }, {
                 logger.error("createPayment(${it.message} -> ${it.cause})")

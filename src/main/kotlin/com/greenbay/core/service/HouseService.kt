@@ -73,7 +73,7 @@ open class HouseService : UserService() {
                             )
                     )
                 )
-            dbUtil.aggregate(Collections.HOUSES.toString(), pipeline, {
+            aggregate(Collections.HOUSES.toString(), pipeline, {
                 val paging = JsonObject.of("page", pageNumber, "sorted", true)
                 response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {

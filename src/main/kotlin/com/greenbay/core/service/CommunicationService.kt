@@ -134,7 +134,7 @@ open class CommunicationService : PaymentService() {
             }
             val query = JsonObject.of("id", id)
             val update = JsonObject.of("\$set", body)
-            dbUtil.findAndUpdate(Collections.COMMUNICATIONS.toString(), query, update, {
+            findAndUpdate(Collections.COMMUNICATIONS.toString(), query, update, {
                 response.end(getResponse(OK.code(), "Successful", it))
             }, {
                 logger.error("updateCommunication(${it.message} -> ${it.cause}) <--")

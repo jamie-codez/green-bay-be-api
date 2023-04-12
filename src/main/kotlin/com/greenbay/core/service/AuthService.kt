@@ -81,7 +81,7 @@ open class AuthService : TaskService() {
         logger.info("sendPasswordResetEmail() -->")
         execute("sendPasswordResetEmail", rc, { body, response ->
             val query = JsonObject.of("email", body.getString("email"))
-            dbUtil.findOne(Collections.APP_USERS.toString(), query, {
+            findOne(Collections.APP_USERS.toString(), query, {
                 if (it.isEmpty) {
                     response.end(getResponse(NOT_FOUND.code(), "User not found"))
                     return@findOne

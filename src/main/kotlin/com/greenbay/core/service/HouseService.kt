@@ -35,7 +35,7 @@ open class HouseService : UserService() {
                 body.put("addedBy", user.getString("email"))
                 body.put("createdOn", Date(System.currentTimeMillis()))
                 body.put("occupied", false)
-                dbUtil.save(Collections.HOUSES.toString(), body, {
+                save(Collections.HOUSES.toString(), body, {
                     response.end(getResponse(CREATED.code(), "Houses created successfully"))
                 }, {error->
                     logger.error("createHouse(${error.cause} adding) <--")

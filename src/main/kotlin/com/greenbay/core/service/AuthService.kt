@@ -134,8 +134,8 @@ open class AuthService : TaskService() {
                     }
                     val encodedPassword = BCryptPasswordEncoder().encode(body.getString("password"))
                     val update = JsonObject.of("\$set", JsonObject.of("password", encodedPassword))
-                    dbUtil.findAndUpdate(Collections.APP_USERS.toString(), query, update, {
-                        dbUtil.findOneAndDelete(Collections.RESET_CODES.toString(), query, { re ->
+                    findAndUpdate(Collections.APP_USERS.toString(), query, update, {
+                        findOneAndDelete(Collections.RESET_CODES.toString(), query, { re ->
                             logger.info("resetPassword(${re} delete successful) <--")
                         }, { err ->
                             logger.error("resetPassword(${err.cause} delete code) <--")

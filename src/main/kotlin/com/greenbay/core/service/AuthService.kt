@@ -122,12 +122,12 @@ open class AuthService : TaskService() {
         logger.info("resetPassword() -->")
         execute("resetPassword", rc, { body, response ->
             val query = JsonObject.of("email", body.getString("email"))
-            dbUtil.findOne(Collections.RESET_CODES.toString(), query, { res ->
+            findOne(Collections.RESET_CODES.toString(), query, { res ->
                 if (res.isEmpty) {
                     response.end(getResponse(OK.code(), "Reset link has already been used"))
                     return@findOne
                 }
-                dbUtil.findOne(Collections.APP_USERS.toString(), query, {
+                findOne(Collections.APP_USERS.toString(), query, {
                     if (it.isEmpty) {
                         response.end(getResponse(NOT_FOUND.code(), "User not found"))
                         return@findOne

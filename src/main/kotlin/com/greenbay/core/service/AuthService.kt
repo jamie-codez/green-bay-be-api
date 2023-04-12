@@ -1,22 +1,15 @@
 package com.greenbay.core.service
 
 import com.greenbay.core.Collections
-import com.greenbay.core.utils.BaseUtils.Companion.MAX_BODY_SIZE
-import com.greenbay.core.utils.BaseUtils.Companion.execute
-import com.greenbay.core.utils.BaseUtils.Companion.generateAccessJwt
-import com.greenbay.core.utils.BaseUtils.Companion.generateRefreshJwt
-import com.greenbay.core.utils.BaseUtils.Companion.getResponse
-import com.greenbay.core.utils.BaseUtils.Companion.sendEmail
 import io.netty.handler.codec.http.HttpResponseStatus.*
 import io.vertx.core.impl.logging.LoggerFactory
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
-import org.springframework.security.crypto.bcrypt.BCrypt
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
-import org.springframework.security.crypto.password.PasswordEncoder
 import java.util.*
 
+@Suppress("LABEL_NAME_CLASH")
 open class AuthService : TaskService() {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
 
@@ -33,7 +26,7 @@ open class AuthService : TaskService() {
         logger.info("login() -->")
         execute("login", rc, { body, response ->
             val query = JsonObject.of("email", body.getJsonObject("email"))
-            dbUtil.findOne(Collections.APP_USERS.toString(), query, {
+            findOne(Collections.APP_USERS.toString(), query, {
                 if (it.isEmpty) {
                     response.end(getResponse(NOT_FOUND.code(), "User does not exists"))
                     return@findOne
@@ -43,7 +36,7 @@ open class AuthService : TaskService() {
                     val jwt = generateAccessJwt(it.getString("email"))
                     val refresh = generateRefreshJwt(it.getString("email"))
                     val session = JsonObject.of("email", it.getString("email"), "refreshToken", refresh)
-                    dbUtil.save(Collections.SESSIONS.toString(), session, {
+                    save(Collections.SESSIONS.toString(), session, {
                         response
                             .putHeader("access-token", jwt)
                             .putHeader("refresh-token", refresh)
@@ -65,12 +58,12 @@ open class AuthService : TaskService() {
         logger.info("logout() -->")
         execute("logout", rc, "user", { user, body, response ->
             val query = JsonObject.of("email", body)
-            dbUtil.findOne(Collections.SESSIONS.toString(), query, {
+            findOne(Collections.SESSIONS.toString(), query, {
                 if (it.getString("email") != user.getString("email")) {
                     response.end(getResponse(BAD_REQUEST.code(), "Operation not allowed"))
                     return@findOne
                 }
-                dbUtil.findOneAndDelete(Collections.SESSIONS.toString(), query, {
+                findOneAndDelete(Collections.SESSIONS.toString(), query, {
                     response.end(getResponse(OK.code(), "Logout successful"))
                 }, { thr ->
                     logger.error("logout(${thr.cause}) <--")
@@ -88,7 +81,7 @@ open class AuthService : TaskService() {
         logger.info("sendPasswordResetEmail() -->")
         execute("sendPasswordResetEmail", rc, { body, response ->
             val query = JsonObject.of("email", body.getString("email"))
-            dbUtil.findOne(Collections.APP_USERS.toString(), query, {
+            findOne(Collections.APP_USERS.toString(), query, {
                 if (it.isEmpty) {
                     response.end(getResponse(NOT_FOUND.code(), "User not found"))
                     return@findOne
@@ -96,14 +89,14 @@ open class AuthService : TaskService() {
                 val email = it.getString("email")
                 val code = UUID.randomUUID().toString()
                 val resetCode = JsonObject.of("email", email, "code", code)
-                dbUtil.save(Collections.RESET_CODES.toString(), resetCode, {
+                save(Collections.RESET_CODES.toString(), resetCode, {
                     val scheme = rc.request().scheme()
                     val address = rc.request().localAddress().hostAddress()
                     val port = rc.request().localAddress().port()
                     val htmlText = "$scheme://$address:$port/code/$email/$code"
                     val htmlString = String.format("<a href=%s\">click Here</a>", htmlText)
                     val mailBody = "Click link to reset password."
-                    sendEmail(email, "Password Reset", mailBody, htmlString, vertx = this.vertx, success = {
+                    sendEmail(email, "Password Reset", mailBody, htmlString, success = {
                         logger.info("sendPasswordResetEmail(Mail sent) <--")
                         response.end(getResponse(OK.code(), "Password reset email sent to you mail inbox"))
                     }, fail = { err ->
@@ -129,20 +122,20 @@ open class AuthService : TaskService() {
         logger.info("resetPassword() -->")
         execute("resetPassword", rc, { body, response ->
             val query = JsonObject.of("email", body.getString("email"))
-            dbUtil.findOne(Collections.RESET_CODES.toString(), query, { res ->
+            findOne(Collections.RESET_CODES.toString(), query, { res ->
                 if (res.isEmpty) {
                     response.end(getResponse(OK.code(), "Reset link has already been used"))
                     return@findOne
                 }
-                dbUtil.findOne(Collections.APP_USERS.toString(), query, {
+                findOne(Collections.APP_USERS.toString(), query, {
                     if (it.isEmpty) {
                         response.end(getResponse(NOT_FOUND.code(), "User not found"))
                         return@findOne
                     }
                     val encodedPassword = BCryptPasswordEncoder().encode(body.getString("password"))
                     val update = JsonObject.of("\$set", JsonObject.of("password", encodedPassword))
-                    dbUtil.findAndUpdate(Collections.APP_USERS.toString(), query, update, {
-                        dbUtil.findOneAndDelete(Collections.RESET_CODES.toString(), query, { re ->
+                    findAndUpdate(Collections.APP_USERS.toString(), query, update, {
+                        findOneAndDelete(Collections.RESET_CODES.toString(), query, { re ->
                             logger.info("resetPassword(${re} delete successful) <--")
                         }, { err ->
                             logger.error("resetPassword(${err.cause} delete code) <--")
@@ -160,7 +153,6 @@ open class AuthService : TaskService() {
                 logger.error("resetPassword(${it.cause}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
-
         }, "email", "password")
         logger.info("resetPassword() <--")
     }

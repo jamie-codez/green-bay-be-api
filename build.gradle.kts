@@ -16,7 +16,7 @@ fun getVersionName(): Any {
         }
         val delim = "-"
         val list: List<String> = stdout.toString().split(delim)
-        list[0]
+        list[0].replace("\n","")
     }catch (ex:Exception){
         ""
     }
@@ -35,11 +35,14 @@ dependencies {
     implementation("io.vertx:vertx-mongo-client")
     implementation("io.vertx:vertx-mail-client")
     implementation("io.vertx:vertx-lang-kotlin-coroutines")
+    implementation("io.vertx:vertx-health-check")
     implementation("com.auth0:java-jwt:4.2.2")
+    implementation("org.slf4j:slf4j-api:2.0.7")
     implementation("org.springframework.security:spring-security-crypto:5.5.4")
     implementation(platform("com.squareup.okhttp3:okhttp-bom:4.10.0"))
     implementation("com.squareup.okhttp3:okhttp")
     implementation("com.squareup.okhttp3:logging-interceptor")
+    implementation("org.json:json:20230227")
     testImplementation(kotlin("test"))
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.3.2")
     testImplementation("io.vertx:vertx-junit5")
@@ -56,8 +59,9 @@ vertx{
 }
 
 application{
-    mainClassName = "io.vertx.core.Launcher"
-    mainClass.set(mainVerticleName)
+    executableDir = "jarFile"
+    val mainClassName = "io.vertx.core.Launcher"
+    mainClass.set(mainClassName)
 }
 
 tasks.test {

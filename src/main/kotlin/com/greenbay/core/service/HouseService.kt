@@ -1,16 +1,13 @@
 package com.greenbay.core.service
 
 import com.greenbay.core.Collections
-import com.greenbay.core.utils.BaseUtils.Companion.execute
-import com.greenbay.core.utils.BaseUtils.Companion.getResponse
 import io.netty.handler.codec.http.HttpResponseStatus.*
 import io.vertx.core.impl.logging.LoggerFactory
-import io.vertx.core.json.Json
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
-import java.util.Date
+import java.util.*
 
 open class HouseService : UserService() {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
@@ -27,7 +24,7 @@ open class HouseService : UserService() {
     private fun createHouse(rc: RoutingContext) {
         logger.info("createHouse() -->")
         execute("createHouse", rc, "admin", { user, body, response ->
-            dbUtil.findOne(Collections.HOUSES.toString(), JsonObject.of("houseNumber", body.getString("houseNumber")), {
+            findOne(Collections.HOUSES.toString(), JsonObject.of("houseNumber", body.getString("houseNumber")), {
                 if (!it.isEmpty) {
                     response.end(getResponse(CONFLICT.code(), "House already exists"))
                     return@findOne
@@ -35,7 +32,7 @@ open class HouseService : UserService() {
                 body.put("addedBy", user.getString("email"))
                 body.put("createdOn", Date(System.currentTimeMillis()))
                 body.put("occupied", false)
-                dbUtil.save(Collections.HOUSES.toString(), body, {
+                save(Collections.HOUSES.toString(), body, {
                     response.end(getResponse(CREATED.code(), "Houses created successfully"))
                 }, {error->
                     logger.error("createHouse(${error.cause} adding) <--")
@@ -73,9 +70,9 @@ open class HouseService : UserService() {
                             )
                     )
                 )
-            dbUtil.aggregate(Collections.HOUSES.toString(), pipeline, {
-                val payload = JsonObject.of("data", it, "page", pageNumber, "sorted", true, "scheme", "asc")
-                response.end(getResponse(OK.code(), "Successful", payload))
+            aggregate(Collections.HOUSES.toString(), pipeline, {
+                val paging = JsonObject.of("page", pageNumber, "sorted", true)
+                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
                 logger.error("getHouses(${it.cause}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
@@ -115,9 +112,9 @@ open class HouseService : UserService() {
                         )
                     )
                 )
-            dbUtil.aggregate(Collections.HOUSES.toString(), pipeline, {
-                val payload = JsonObject.of("data", it, "page", pageNumber, "sorted", true, "scheme", "asc")
-                response.end(getResponse(OK.code(), "Successful", payload))
+            aggregate(Collections.HOUSES.toString(), pipeline, {
+                val paging = JsonObject.of("page", pageNumber, "sorted", true)
+                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
                 logger.error("searchHouse(${it.cause}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
@@ -133,7 +130,7 @@ open class HouseService : UserService() {
             if (houseNumber.isNullOrEmpty()) {
                 response.end(getResponse(BAD_REQUEST.code(), "Expected param houseNumber"))
             } else {
-                dbUtil.findAndUpdate(Collections.HOUSES.toString(), JsonObject.of("houseNumber", houseNumber), body, {
+                findAndUpdate(Collections.HOUSES.toString(), JsonObject.of("houseNumber", houseNumber), body, {
                     response.end(getResponse(OK.code(), "House updated successfully", it))
                 }, {
                     logger.error("updateHouse(${it.cause}) <--")
@@ -152,7 +149,7 @@ open class HouseService : UserService() {
                 logger.error("deleteHouse(houseNumber Empty) <--")
                 response.end(getResponse(BAD_REQUEST.code(), "Expected param houseNumber"))
             } else {
-                dbUtil.findOneAndDelete(Collections.HOUSES.toString(), JsonObject.of("houseNumber", houseNumber), {
+                findOneAndDelete(Collections.HOUSES.toString(), JsonObject.of("houseNumber", houseNumber), {
                     response.end(getResponse(OK.code(), "Deleted house successfully"))
                 }, {
                     logger.error("deleteHouse(${it.cause}) <--")

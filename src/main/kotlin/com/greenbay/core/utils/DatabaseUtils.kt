@@ -1,27 +1,43 @@
 package com.greenbay.core.utils
 
+import io.vertx.core.AbstractVerticle
 import io.vertx.core.Vertx
 import io.vertx.core.impl.logging.LoggerFactory
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.mongo.MongoClient
 
-class DatabaseUtils(vertx: Vertx) {
+open class DatabaseUtils : AbstractVerticle() {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
-    private val dbClient = MongoClient.createShared(vertx, config())
+    private lateinit var dbClient: MongoClient
 
-    private fun config(): JsonObject =
-        JsonObject.of("connection_string", System.getenv("DB_CON_STRING"), "db_name", System.getenv("DB_NAME"))
+    init {
+        dbClient = MongoClient.createShared(Vertx.vertx(), this.getConfig())
+    }
 
-    private fun getDBClient(): MongoClient = this.dbClient
+    private fun getConfig(): JsonObject =
+        JsonObject.of(
+            "keepAlive", true,
+            "socketTimeoutMS", 5_000,
+            "connectTimeoutMS", 5_000,
+            "maxIdleTimeMS", 90_000,
+            "autoReconnect", true,
+            "db_name", System.getenv("GB_DB_NAME"),
+            "url", System.getenv("GB_DB_CON_STRING"),
+            "username", System.getenv("GB_DB_USERNAME"),
+            "password", System.getenv("GB_DB_PASSWORD"),
+            "authSource", "admin"
+        )
 
-    fun save(
+    fun getDBClient(): MongoClient = this.dbClient
+
+    open fun save(
         collection: String,
         document: JsonObject,
         success: (result: String) -> Unit,
         fail: (throwable: Throwable) -> Unit
     ) {
-        getDBClient().save(collection, document) {
+        this.getDBClient().save(collection, document) {
             if (it.succeeded()) {
                 logger.info("Inserted successfully -> ${document.encodePrettily()} ")
                 success(it.result())
@@ -32,46 +48,48 @@ class DatabaseUtils(vertx: Vertx) {
         }
     }
 
-    fun find(
+    open fun find(
         collection: String,
         query: JsonObject,
         success: (result: List<JsonObject>) -> Unit,
         fail: (throwable: Throwable) -> Unit
     ) {
-        getDBClient().find(collection, query) {
+        this.getDBClient().find(collection, query) {
             if (it.succeeded()) {
                 logger.info("Retrieve successful")
                 success(it.result())
             } else {
+                logger.error("Error fetching documents")
                 fail(it.cause())
             }
         }
     }
 
-    fun findOne(
+    open fun findOne(
         collection: String,
         query: JsonObject,
         success: (result: JsonObject) -> Unit,
         fail: (throwable: Throwable) -> Unit
     ) {
-        getDBClient().findOne(collection, query, JsonObject()) {
+        this.getDBClient().findOne(collection, query, JsonObject()) {
             if (it.succeeded()) {
                 logger.info("Retrieve successful")
                 success(it.result())
             } else {
+                logger.error("Error fetching document")
                 fail(it.cause())
             }
         }
     }
 
-    fun findAndUpdate(
+    open fun findAndUpdate(
         collection: String,
         query: JsonObject,
         update: JsonObject,
         success: (result: JsonObject) -> Unit,
         fail: (throwable: Throwable) -> Unit
     ) {
-        getDBClient().findOneAndUpdate(collection, query, update) {
+        this.getDBClient().findOneAndUpdate(collection, query, update) {
             if (it.succeeded()) {
                 logger.info("Update successful ${query.encodePrettily()} -->")
                 success(it.result())
@@ -82,13 +100,13 @@ class DatabaseUtils(vertx: Vertx) {
         }
     }
 
-    fun findOneAndDelete(
+    open fun findOneAndDelete(
         collection: String,
         query: JsonObject,
         success: (result: JsonObject) -> Unit,
         fail: (throwable: Throwable) -> Unit
     ) {
-        getDBClient().findOneAndDelete(collection, query) {
+        this.getDBClient().findOneAndDelete(collection, query) {
             if (it.succeeded()) {
                 logger.info("Delete successful ${query.encodePrettily()} -->")
                 success(it.result())
@@ -99,14 +117,14 @@ class DatabaseUtils(vertx: Vertx) {
         }
     }
 
-    fun aggregate(
+    open fun aggregate(
         collection: String,
         pipeline: JsonArray,
         success: (result: ArrayList<JsonObject?>) -> Unit,
         fail: (throwable: Throwable) -> Unit
     ) {
         val results = ArrayList<JsonObject?>()
-        getDBClient().aggregate(collection, pipeline).handler {
+        this.getDBClient().aggregate(collection, pipeline).handler {
             logger.info("aggregate(streaming data) -->")
             results.add(it)
         }.endHandler {

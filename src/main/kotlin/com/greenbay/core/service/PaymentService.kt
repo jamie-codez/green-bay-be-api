@@ -1,8 +1,6 @@
 package com.greenbay.core.service
 
 import com.greenbay.core.Collections
-import com.greenbay.core.utils.BaseUtils.Companion.execute
-import com.greenbay.core.utils.BaseUtils.Companion.getResponse
 import io.netty.handler.codec.http.HttpResponseStatus.*
 import io.vertx.core.impl.logging.LoggerFactory
 import io.vertx.core.json.JsonArray
@@ -31,7 +29,7 @@ open class PaymentService : TenantService() {
                 .put("from", user.getString("email"))
                 .put("dateCreated", Date(System.currentTimeMillis()))
                 .put("verified", false)
-            dbUtil.save(Collections.PAYMENTS.toString(), body, {
+            save(Collections.PAYMENTS.toString(), body, {
                 response.end(getResponse(OK.code(), "Payment recorded successfully"))
             }, {
                 logger.error("createPayment(${it.message} -> ${it.cause})")
@@ -47,19 +45,22 @@ open class PaymentService : TenantService() {
             val limit = 20
             val pageNumber = Integer.valueOf(rc.request().getParam("pageNumber")) - 1
             val skip = pageNumber * limit
+            val owner = body.getString("owner") ?: ""
             val pipeline = JsonArray()
-//                .add(JsonObject.of("\$match", JsonObject.of("from", user.getString("email"))))
-                .add(
-                    JsonObject.of(
-                        "\$lookup", JsonObject
-                            .of(
-                                "collection", "app_users",
-                                "localField", "from",
-                                "foreignField", "email",
-                                "as", "user"
-                            )
-                    )
+            if (owner == "mine") {
+                pipeline.add(JsonObject.of("\$match", JsonObject.of("from", user.getString("email"))))
+            }
+            pipeline.add(
+                JsonObject.of(
+                    "\$lookup", JsonObject
+                        .of(
+                            "from", "app_users",
+                            "localField", "from",
+                            "foreignField", "email",
+                            "as", "user"
+                        )
                 )
+            )
                 .add(
                     JsonObject.of(
                         "\$project", JsonObject
@@ -78,20 +79,20 @@ open class PaymentService : TenantService() {
                 )
                 .add(JsonObject.of("\$skip", skip))
                 .add(JsonObject.of("\$limit", limit))
-            dbUtil.aggregate(Collections.PAYMENTS.toString(), pipeline, {
-                it.add(JsonObject.of("paging", JsonObject.of("page", pageNumber)))
-                response.end(getResponse(OK.code(), "Successful", JsonObject.of("data", it)))
+            aggregate(Collections.PAYMENTS.toString(), pipeline, {
+                val paging = JsonObject.of("page", pageNumber, "sorted", false)
+                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
                 logger.error("getPayments(${it.message} -> ${it.cause})")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
-        })
+        }, "owner")
         logger.info("getPayments() <--")
     }
 
     private fun searchPayment(rc: RoutingContext) {
         logger.info("searchPayment() -->")
-        execute("searchPayment", rc, "user", { user, body, response ->
+        execute("searchPayment", rc, "user", { _, _, response ->
             val pageNumber = Integer.valueOf(rc.request().getParam("pageNumber")) - 1
             val term = rc.request().getParam("term") ?: ""
             val limit = 20
@@ -107,7 +108,7 @@ open class PaymentService : TenantService() {
                     JsonObject.of(
                         "\$lookup", JsonObject
                             .of(
-                                "collection", "app_users",
+                                "from", "app_users",
                                 "localField", "from",
                                 "foreignField", "email",
                                 "as", "user"
@@ -132,9 +133,9 @@ open class PaymentService : TenantService() {
                 )
                 .add(JsonObject.of("\$skip", skip))
                 .add(JsonObject.of("\$limit", limit))
-            dbUtil.aggregate(Collections.PAYMENTS.toString(), pipeline, {
-                it.add(JsonObject.of("paging", JsonObject.of("page", pageNumber)))
-                response.end(getResponse(OK.code(), "Successful", JsonObject.of("data", it)))
+            aggregate(Collections.PAYMENTS.toString(), pipeline, {
+                val paging = JsonObject.of("page", pageNumber, "sorted", false)
+                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
                 logger.error("searchPayment(${it.message} -> ${it.cause})")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
@@ -157,7 +158,7 @@ open class PaymentService : TenantService() {
                 )
             body.remove("amount")
             body.remove("verified")
-            dbUtil.findAndUpdate(Collections.PAYMENTS.toString(), query, body, {
+            findAndUpdate(Collections.PAYMENTS.toString(), query, body, {
                 response.end(getResponse(OK.code(), "Payment updated successfully", it))
             }, {
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
@@ -168,14 +169,14 @@ open class PaymentService : TenantService() {
 
     private fun deletePayment(rc: RoutingContext) {
         logger.info("deletePayment() -->")
-        execute("deletePayment", rc, "admin", { user, body, response ->
+        execute("deletePayment", rc, "admin", { _, _, response ->
             val referenceNumber = rc.request().getParam("referenceNumber")
             if (referenceNumber.isNullOrEmpty()) {
                 response.end(getResponse(BAD_REQUEST.code(), "Expected parameter referenceNumber"))
                 return@execute
             }
             val query = JsonObject.of("referenceNumber", referenceNumber)
-            dbUtil.findOneAndDelete(Collections.PAYMENTS.toString(), query, {
+            findOneAndDelete(Collections.PAYMENTS.toString(), query, {
                 response.end(getResponse(OK.code(), "Payment deleted successfully", it))
             }, {
                 logger.error("deletePayment(${it.message} -> ${it.cause}) <--")
@@ -187,7 +188,7 @@ open class PaymentService : TenantService() {
 
     private fun deleteMyPayment(rc: RoutingContext) {
         logger.info("deleteMyPayment() -->")
-        execute("deleteMyPayment", rc, "admin", { user, body, response ->
+        execute("deleteMyPayment", rc, "admin", { user, _, response ->
             val referenceNumber = rc.request().getParam("referenceNumber") ?: ""
             val email = rc.request().getParam("email") ?: ""
             if (referenceNumber.isEmpty() || email.isEmpty()) {
@@ -196,7 +197,7 @@ open class PaymentService : TenantService() {
             }
             if (user.getString("email") == email) {
                 val query = JsonObject.of("referenceNumber", referenceNumber, "from", email)
-                dbUtil.findOneAndDelete(Collections.PAYMENTS.toString(), query, {
+                findOneAndDelete(Collections.PAYMENTS.toString(), query, {
                     response.end(getResponse(OK.code(), "Payment deleted successfully", it))
                 }, {
                     logger.error("deletePayment(${it.message} -> ${it.cause}) <--")
@@ -208,5 +209,28 @@ open class PaymentService : TenantService() {
         })
         logger.info("deletePayment() <--")
     }
+
+    //            {
+//                "BusinessShortCode": 174379,
+//                "Password": "MTc0Mzc5YmZiMjc5ZjlhYTliZGJjZjE1OGU5N2RkNzFhNDY3Y2QyZTBjODkzMDU5YjEwZjc4ZTZiNzJhZGExZWQyYzkxOTIwMjMwMzE3MDAwMzM0",
+//                "Timestamp": "20230317000334",
+//                "TransactionType": "CustomerPayBillOnline",
+//                "Amount": 1,
+//                "PartyA": 254708374149,
+//                "PartyB": 174379,
+//                "PhoneNumber": 254708374149,
+//                "CallBackURL": "https://mydomain.com/path",
+//                "AccountReference": "CompanyXLTD",
+//                "TransactionDesc": "Payment of X"
+//            }
+
+//    {
+//        "ShortCode": 600989,
+//        "ResponseType": "Completed",
+//        "ConfirmationURL": "https://mydomain.com/confirmation",
+//        "ValidationURL": "https://mydomain.com/validation",
+//    }
+
+
 
 }

@@ -1,11 +1,8 @@
 package com.greenbay.core.service
 
 import com.greenbay.core.Collections
-import com.greenbay.core.utils.BaseUtils.Companion.execute
-import com.greenbay.core.utils.BaseUtils.Companion.getResponse
 import io.netty.handler.codec.http.HttpResponseStatus.*
 import io.vertx.core.impl.logging.LoggerFactory
-import io.vertx.core.json.Json
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Router
@@ -30,7 +27,7 @@ open class CommunicationService : PaymentService() {
                 body.put("id", UUID.randomUUID().toString())
                     .put("createdBy", user.getString("email"))
                     .put("dateCreated", Date(System.currentTimeMillis()))
-                dbUtil.save(Collections.COMMUNICATIONS.toString(), body, {
+                save(Collections.COMMUNICATIONS.toString(), body, {
                     response.end(getResponse(CREATED.code(), "Communication created successfully"))
                 }, {
                     logger.error("createCommunication(${it.message} -> ${it.cause}) <--")
@@ -51,7 +48,7 @@ open class CommunicationService : PaymentService() {
                 .add(
                     JsonObject.of(
                         "\$lookup", JsonObject.of(
-                            "collection", "app_users",
+                            "from", "app_users",
                             "localField", "to",
                             "foreignField", "email",
                             "as", "user"
@@ -68,9 +65,9 @@ open class CommunicationService : PaymentService() {
                 )
                 .add(JsonObject.of("\$limit", limit))
                 .add(JsonObject.of("\$skip", skip))
-            dbUtil.aggregate(Collections.COMMUNICATIONS.toString(), pipeline, {
-                it.add(JsonObject.of("page", pageNumber, "sorted", false))
-                response.end(getResponse(OK.code(), "Successful", JsonObject.of("data", it)))
+            aggregate(Collections.COMMUNICATIONS.toString(), pipeline, {
+                val paging = JsonObject.of("page", pageNumber, "sorted", false)
+                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
                 logger.error("getCommunications(${it.message} -> ${it.cause}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
@@ -96,7 +93,7 @@ open class CommunicationService : PaymentService() {
                 .add(
                     JsonObject.of(
                         "\$lookup", JsonObject.of(
-                            "collection", "app_users",
+                            "from", "app_users",
                             "localField", "to",
                             "foreignField", "email",
                             "as", "user"
@@ -113,9 +110,9 @@ open class CommunicationService : PaymentService() {
                 )
                 .add(JsonObject.of("\$limit", limit))
                 .add(JsonObject.of("\$skip", skip))
-            dbUtil.aggregate(Collections.COMMUNICATIONS.toString(), pipeline, {
-                it.add(JsonObject.of("page", pageNumber, "sorted", false))
-                response.end(getResponse(OK.code(), "Successful", JsonObject.of("data", it)))
+            aggregate(Collections.COMMUNICATIONS.toString(), pipeline, {
+                val paging = JsonObject.of("page", pageNumber, "sorted", false)
+                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
                 logger.error("searchCommunication(${it.message} -> ${it.cause}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
@@ -134,7 +131,7 @@ open class CommunicationService : PaymentService() {
             }
             val query = JsonObject.of("id", id)
             val update = JsonObject.of("\$set", body)
-            dbUtil.findAndUpdate(Collections.COMMUNICATIONS.toString(), query, update, {
+            findAndUpdate(Collections.COMMUNICATIONS.toString(), query, update, {
                 response.end(getResponse(OK.code(), "Successful", it))
             }, {
                 logger.error("updateCommunication(${it.message} -> ${it.cause}) <--")
@@ -153,7 +150,7 @@ open class CommunicationService : PaymentService() {
                 return@execute
             }
             val query = JsonObject.of("id", id)
-            dbUtil.findOneAndDelete(Collections.COMMUNICATIONS.toString(), query, {
+            findOneAndDelete(Collections.COMMUNICATIONS.toString(), query, {
                 response.end(getResponse(OK.code(), "Successfully deleted communication"))
             }, {
                 logger.error("deleteCommunication(${it.message} -> ${it.cause}) <--")

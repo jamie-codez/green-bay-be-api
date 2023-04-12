@@ -1,8 +1,6 @@
 package com.greenbay.core.service
 
 import com.greenbay.core.Collections
-import com.greenbay.core.utils.BaseUtils.Companion.execute
-import com.greenbay.core.utils.BaseUtils.Companion.getResponse
 import io.netty.handler.codec.http.HttpResponseStatus.*
 import io.vertx.core.impl.logging.LoggerFactory
 import io.vertx.core.json.JsonArray
@@ -24,7 +22,7 @@ open class TenantService : HouseService() {
     private fun createTenant(rc: RoutingContext) {
         logger.info("createTenant() -->")
         execute("createTenant", rc, "admin", { user, body, response ->
-            dbUtil.findOne(
+            findOne(
                 Collections.APP_USERS.toString(),
                 JsonObject.of("email", body.getString("client")),
                 { client ->
@@ -32,12 +30,12 @@ open class TenantService : HouseService() {
                         response.end(getResponse(NOT_FOUND.code(), "User does not exist"))
                         return@findOne
                     }
-                    dbUtil.findOne(
+                    findOne(
                         Collections.HOUSES.toString(),
                         JsonObject.of("houseNumber", body.getString("houseNumber")),
                         { house ->
                             val tenant = JsonObject.of("user", client, "house", house)
-                            dbUtil.save(Collections.TENANTS.toString(), tenant, {
+                            save(Collections.TENANTS.toString(), tenant, {
                                 response.end(getResponse(CREATED.code(), "Tenant created successfully"))
                             }, { error ->
                                 logger.error("createTenant(${error.message}) <--")
@@ -108,7 +106,7 @@ open class TenantService : HouseService() {
                 .add(JsonObject.of("\$skip", skip))
                 .add(JsonObject.of("\$limit", limit))
                 .add(JsonObject.of("\$sort", 1))
-            dbUtil.aggregate(Collections.TENANTS.toString(), pipeline, {
+            aggregate(Collections.TENANTS.toString(), pipeline, {
                 val paging = JsonObject.of("page", pageNumber, "sorted", false)
                 response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
@@ -177,7 +175,7 @@ open class TenantService : HouseService() {
                 .add(JsonObject.of("\$skip", skip))
                 .add(JsonObject.of("\$limit", limit))
                 .add(JsonObject.of("\$sort", 1))
-            dbUtil.aggregate(Collections.TENANTS.toString(), pipeline, {
+            aggregate(Collections.TENANTS.toString(), pipeline, {
                 val paging = JsonObject.of("page", pageNumber, "sorted", false)
                 response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
@@ -196,7 +194,7 @@ open class TenantService : HouseService() {
                 response.end(getResponse(BAD_REQUEST.code(), "Expected parameter client"))
                 return@execute
             }
-            dbUtil.findAndUpdate(Collections.TENANTS.toString(), JsonObject.of("client", client), body, {
+            findAndUpdate(Collections.TENANTS.toString(), JsonObject.of("client", client), body, {
                 response.end(getResponse(OK.code(), "Successfully updated tenant"))
             }, {
                 logger.error("updateTenant(${it.cause}) <--")
@@ -214,7 +212,7 @@ open class TenantService : HouseService() {
                 response.end(getResponse(BAD_REQUEST.code(), "Expected field client"))
                 return@execute
             }
-            dbUtil.findOneAndDelete(Collections.TENANTS.toString(), JsonObject.of("client", client), {
+            findOneAndDelete(Collections.TENANTS.toString(), JsonObject.of("client", client), {
                 response.end(getResponse(OK.code(), "Successfully deleted tenant"))
             }, {
                 logger.error("deleteTenant(${it.cause}) <--")

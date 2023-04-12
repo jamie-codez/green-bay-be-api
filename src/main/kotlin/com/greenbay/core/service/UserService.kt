@@ -1,15 +1,9 @@
 package com.greenbay.core.service
 
 import com.greenbay.core.Collections
-import com.greenbay.core.utils.BaseUtils.Companion.execute
-import com.greenbay.core.utils.BaseUtils.Companion.getResponse
-import com.greenbay.core.utils.BaseUtils.Companion.hasRole
-import com.greenbay.core.utils.BaseUtils.Companion.hasValues
-import com.greenbay.core.utils.DatabaseUtils
+import com.greenbay.core.utils.BaseUtils
 import io.netty.handler.codec.http.HttpResponseStatus.*
-import io.vertx.core.AbstractVerticle
 import io.vertx.core.impl.logging.LoggerFactory
-import io.vertx.core.json.Json
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Router
@@ -17,13 +11,8 @@ import io.vertx.ext.web.RoutingContext
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import java.util.*
 
-open class UserService : AbstractVerticle() {
+open class UserService : BaseUtils() {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
-    var dbUtil: DatabaseUtils
-
-    init {
-        dbUtil  = DatabaseUtils(this.vertx)
-    }
 
     fun setUserRoutes(router: Router) {
         router.post("/users").handler(::createUser)
@@ -37,7 +26,7 @@ open class UserService : AbstractVerticle() {
     private fun createUser(rc: RoutingContext) {
         logger.info("createUser() -->")
         execute("createUser", rc, "admin", { user, body, response ->
-            dbUtil.findOne(Collections.APP_USERS.toString(), JsonObject.of("email", body.getString("email")), {
+            findOne(Collections.APP_USERS.toString(), JsonObject.of("email", body.getString("email")), {
                 if (!it.isEmpty) {
                     response.end(getResponse(CONFLICT.code(), "User already exists"))
                 } else {
@@ -47,7 +36,7 @@ open class UserService : AbstractVerticle() {
                     val encodedPassword = BCryptPasswordEncoder().encode(body.getString("password"))
                     body.remove("password")
                     body.put("password", encodedPassword)
-                    dbUtil.save(Collections.APP_USERS.toString(), body, {
+                    save(Collections.APP_USERS.toString(), body, {
                         response.end(getResponse(CREATED.code(), "User created successfully, now attach roles"))
                     }, { error ->
                         logger.error("createUser(${error.cause}) <--")
@@ -65,7 +54,7 @@ open class UserService : AbstractVerticle() {
     private fun createAdmin(rc: RoutingContext) {
         logger.info("createAdmin() -->")
         execute("createAdmin", rc, { body, response ->
-            dbUtil.findOne(Collections.APP_USERS.toString(), JsonObject.of("email", body.getString("email")), {
+            findOne(Collections.APP_USERS.toString(), JsonObject.of("email", body.getString("email")), {
                 if (!it.isEmpty) {
                     response.end(getResponse(CONFLICT.code(), "User already exists"))
                 } else {
@@ -75,7 +64,7 @@ open class UserService : AbstractVerticle() {
                     val encodedPassword = BCryptPasswordEncoder().encode(body.getString("password"))
                     body.remove("password")
                     body.put("password", encodedPassword)
-                    dbUtil.save(Collections.APP_USERS.toString(), body, {
+                    save(Collections.APP_USERS.toString(), body, {
                         response.end(getResponse(CREATED.code(), "User created successfully, now attach roles"))
                     }, { error ->
                         logger.error("createAdmin(${error.message}) <--", error.cause?.cause)
@@ -112,7 +101,7 @@ open class UserService : AbstractVerticle() {
                         )
                     )
                 )
-            dbUtil.aggregate(Collections.APP_USERS.toString(), pipeline, {
+            aggregate(Collections.APP_USERS.toString(), pipeline, {
                 val paging = JsonObject.of("page", pageNumber, "sorted", false)
                 response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
@@ -139,7 +128,7 @@ open class UserService : AbstractVerticle() {
                 .add(JsonObject.of("\$match", query))
                 .add(JsonObject.of("\$limit", limit))
                 .add(JsonObject.of("\$skip", skip))
-            dbUtil.aggregate(Collections.APP_USERS.toString(), pipeline, {
+            aggregate(Collections.APP_USERS.toString(), pipeline, {
                 val paging = JsonObject.of("page", pageNumber, "sorted", false)
                 response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
@@ -157,7 +146,7 @@ open class UserService : AbstractVerticle() {
             if (hasValues(body, "roles") && !hasRole(user.getJsonObject("roles"), "admin")) {
                 response.end(getResponse(UNAUTHORIZED.code(), "You dont have permission for this task"))
             }
-            dbUtil.findAndUpdate(Collections.APP_USERS.toString(), JsonObject.of("email", email), body, {
+            findAndUpdate(Collections.APP_USERS.toString(), JsonObject.of("email", email), body, {
                 response.end(getResponse(OK.code(), "Successfully updated user", it))
             }, {
                 logger.error("updateUser(${it.message}) <--", it.cause?.cause)
@@ -176,12 +165,12 @@ open class UserService : AbstractVerticle() {
                 return@execute
             }
             val query = JsonObject.of("email", email)
-            dbUtil.findOne(Collections.APP_USERS.toString(), query, {
+            findOne(Collections.APP_USERS.toString(), query, {
                 if (it.isEmpty) {
                     response.end(getResponse(NOT_FOUND.code(), "User not found"))
                     return@findOne
                 }
-                dbUtil.findOneAndDelete(Collections.APP_USERS.toString(), query, {
+                findOneAndDelete(Collections.APP_USERS.toString(), query, {
                     response.end(getResponse(OK.code(), "User deleted successfully"))
                 }, { error ->
                     logger.error("deleteUser(${error.message}) <--", error.cause?.cause)

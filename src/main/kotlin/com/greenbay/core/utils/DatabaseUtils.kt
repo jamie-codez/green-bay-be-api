@@ -1,35 +1,37 @@
 package com.greenbay.core.utils
 
+import io.vertx.core.AbstractVerticle
 import io.vertx.core.Vertx
 import io.vertx.core.impl.logging.LoggerFactory
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.mongo.MongoClient
 
-class DatabaseUtils(val vertx: Vertx) {
+open class DatabaseUtils : AbstractVerticle() {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
     private lateinit var dbClient: MongoClient
+
     init {
-        this.dbClient = MongoClient.createShared(this.vertx, this.getConfig())
+        dbClient = MongoClient.createShared(Vertx.vertx(), this.getConfig())
     }
 
     private fun getConfig(): JsonObject =
         JsonObject.of(
-            "keepAlive",true,
-            "socketTimeoutMS",5_000,
-            "connectTimeoutMS",5_000,
-            "maxIdleTimeMS",90_000,
-            "autoReconnect",true,
+            "keepAlive", true,
+            "socketTimeoutMS", 5_000,
+            "connectTimeoutMS", 5_000,
+            "maxIdleTimeMS", 90_000,
+            "autoReconnect", true,
             "db_name", System.getenv("GB_DB_NAME"),
-            "connection_string", System.getenv("GB_DB_CON_STRING"),
-            "username",System.getenv("GB_DB_USERNAME"),
-            "password",System.getenv("GB_DB_PASSWORD"),
-            "authSource","admin"
+            "url", System.getenv("GB_DB_CON_STRING"),
+            "username", System.getenv("GB_DB_USERNAME"),
+            "password", System.getenv("GB_DB_PASSWORD"),
+            "authSource", "admin"
         )
 
-    private fun getDBClient(): MongoClient = this.dbClient
+    fun getDBClient(): MongoClient = this.dbClient
 
-    fun save(
+    open fun save(
         collection: String,
         document: JsonObject,
         success: (result: String) -> Unit,
@@ -46,7 +48,7 @@ class DatabaseUtils(val vertx: Vertx) {
         }
     }
 
-    fun find(
+    open fun find(
         collection: String,
         query: JsonObject,
         success: (result: List<JsonObject>) -> Unit,
@@ -63,7 +65,7 @@ class DatabaseUtils(val vertx: Vertx) {
         }
     }
 
-    fun findOne(
+    open fun findOne(
         collection: String,
         query: JsonObject,
         success: (result: JsonObject) -> Unit,
@@ -80,7 +82,7 @@ class DatabaseUtils(val vertx: Vertx) {
         }
     }
 
-    fun findAndUpdate(
+    open fun findAndUpdate(
         collection: String,
         query: JsonObject,
         update: JsonObject,
@@ -98,7 +100,7 @@ class DatabaseUtils(val vertx: Vertx) {
         }
     }
 
-    fun findOneAndDelete(
+    open fun findOneAndDelete(
         collection: String,
         query: JsonObject,
         success: (result: JsonObject) -> Unit,
@@ -115,7 +117,7 @@ class DatabaseUtils(val vertx: Vertx) {
         }
     }
 
-    fun aggregate(
+    open fun aggregate(
         collection: String,
         pipeline: JsonArray,
         success: (result: ArrayList<JsonObject?>) -> Unit,

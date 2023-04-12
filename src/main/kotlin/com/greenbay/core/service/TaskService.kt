@@ -2,16 +2,13 @@ package com.greenbay.core.service
 
 import com.greenbay.core.Collections
 import com.greenbay.core.TaskStatus
-import com.greenbay.core.utils.BaseUtils.Companion.execute
-import com.greenbay.core.utils.BaseUtils.Companion.getResponse
 import io.netty.handler.codec.http.HttpResponseStatus.*
 import io.vertx.core.impl.logging.LoggerFactory
-import io.vertx.core.json.Json
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
-import java.util.Date
+import java.util.*
 
 open class TaskService : CommunicationService() {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
@@ -30,7 +27,7 @@ open class TaskService : CommunicationService() {
             body.put("createdBy", user.getString("email"))
                 .put("createdOn", Date(System.currentTimeMillis()))
                 .put("status", TaskStatus.PENDING.toString())
-            dbUtil.save(Collections.TASKS.toString(), body, {
+            save(Collections.TASKS.toString(), body, {
                 response.end(getResponse(CREATED.code(), "Task created successfully"))
             }, {
                 logger.error("createTask(${it.cause} -> creatingTask) <--")
@@ -94,7 +91,7 @@ open class TaskService : CommunicationService() {
                 )
                 .add(JsonObject.of("\$skip", skip))
                 .add(JsonObject.of("\$limit", limit))
-            dbUtil.aggregate(Collections.TASKS.toString(), pipeline, {
+            aggregate(Collections.TASKS.toString(), pipeline, {
                 val paging = JsonObject.of("page", pageNumber, "sorted", false)
                 response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
@@ -166,7 +163,7 @@ open class TaskService : CommunicationService() {
                 )
                 .add(JsonObject.of("\$skip", skip))
                 .add(JsonObject.of("\$limit", limit))
-            dbUtil.aggregate(Collections.TASKS.toString(), pipeline, {
+            aggregate(Collections.TASKS.toString(), pipeline, {
                 val paging = JsonObject.of("page", pageNumber, "sorted", false)
                 response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
@@ -186,12 +183,12 @@ open class TaskService : CommunicationService() {
                 return@execute
             }
             val query = JsonObject.of("_id", id)
-            dbUtil.findOne(Collections.TASKS.toString(), query, {
+            findOne(Collections.TASKS.toString(), query, {
                 if (it.isEmpty) {
                     response.end(getResponse(NOT_FOUND.code(), "Task not found"))
                     return@findOne
                 }
-                dbUtil.findAndUpdate(Collections.TASKS.toString(), query,body, {
+                findAndUpdate(Collections.TASKS.toString(), query,body, {
                     response.end(getResponse(OK.code(), "Task updated successfully"))
                 }, { err ->
                     logger.error("updateTask(${err.cause} -> updatingTask) <--")
@@ -214,12 +211,12 @@ open class TaskService : CommunicationService() {
                 return@execute
             }
             val query = JsonObject.of("_id", id)
-            dbUtil.findOne(Collections.TASKS.toString(), query, {
+            findOne(Collections.TASKS.toString(), query, {
                 if (it.isEmpty) {
                     response.end(getResponse(NOT_FOUND.code(), "Task not found"))
                     return@findOne
                 }
-                dbUtil.findOneAndDelete(Collections.TASKS.toString(), query, {
+                findOneAndDelete(Collections.TASKS.toString(), query, {
                     response.end(getResponse(OK.code(), "Task deleted successfully"))
                 }, { err ->
                     logger.error("deleteTask(${err.cause} -> deletingTask) <--")

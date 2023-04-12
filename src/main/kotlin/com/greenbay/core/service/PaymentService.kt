@@ -160,7 +160,7 @@ open class PaymentService : TenantService() {
                 )
             body.remove("amount")
             body.remove("verified")
-            dbUtil.findAndUpdate(Collections.PAYMENTS.toString(), query, body, {
+            findAndUpdate(Collections.PAYMENTS.toString(), query, body, {
                 response.end(getResponse(OK.code(), "Payment updated successfully", it))
             }, {
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))

@@ -96,7 +96,7 @@ open class AuthService : TaskService() {
                     val htmlText = "$scheme://$address:$port/code/$email/$code"
                     val htmlString = String.format("<a href=%s\">click Here</a>", htmlText)
                     val mailBody = "Click link to reset password."
-                    sendEmail(email, "Password Reset", mailBody, htmlString, vertx = this.vertx, success = {
+                    sendEmail(email, "Password Reset", mailBody, htmlString, success = {
                         logger.info("sendPasswordResetEmail(Mail sent) <--")
                         response.end(getResponse(OK.code(), "Password reset email sent to you mail inbox"))
                     }, fail = { err ->
@@ -153,7 +153,6 @@ open class AuthService : TaskService() {
                 logger.error("resetPassword(${it.cause}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
-
         }, "email", "password")
         logger.info("resetPassword() <--")
     }

@@ -1,8 +1,6 @@
 package com.greenbay.core.service
 
 import com.greenbay.core.Collections
-import com.greenbay.core.utils.BaseUtils.Companion.execute
-import com.greenbay.core.utils.BaseUtils.Companion.getResponse
 import io.netty.handler.codec.http.HttpResponseStatus.*
 import io.vertx.core.impl.logging.LoggerFactory
 import io.vertx.core.json.JsonArray

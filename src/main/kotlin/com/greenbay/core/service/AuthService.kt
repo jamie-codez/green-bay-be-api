@@ -89,7 +89,7 @@ open class AuthService : TaskService() {
                 val email = it.getString("email")
                 val code = UUID.randomUUID().toString()
                 val resetCode = JsonObject.of("email", email, "code", code)
-                dbUtil.save(Collections.RESET_CODES.toString(), resetCode, {
+                save(Collections.RESET_CODES.toString(), resetCode, {
                     val scheme = rc.request().scheme()
                     val address = rc.request().localAddress().hostAddress()
                     val port = rc.request().localAddress().port()

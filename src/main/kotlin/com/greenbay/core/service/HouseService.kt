@@ -133,7 +133,7 @@ open class HouseService : UserService() {
             if (houseNumber.isNullOrEmpty()) {
                 response.end(getResponse(BAD_REQUEST.code(), "Expected param houseNumber"))
             } else {
-                dbUtil.findAndUpdate(Collections.HOUSES.toString(), JsonObject.of("houseNumber", houseNumber), body, {
+                findAndUpdate(Collections.HOUSES.toString(), JsonObject.of("houseNumber", houseNumber), body, {
                     response.end(getResponse(OK.code(), "House updated successfully", it))
                 }, {
                     logger.error("updateHouse(${it.cause}) <--")

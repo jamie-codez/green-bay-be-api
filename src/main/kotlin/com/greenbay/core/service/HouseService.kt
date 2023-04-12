@@ -152,7 +152,7 @@ open class HouseService : UserService() {
                 logger.error("deleteHouse(houseNumber Empty) <--")
                 response.end(getResponse(BAD_REQUEST.code(), "Expected param houseNumber"))
             } else {
-                dbUtil.findOneAndDelete(Collections.HOUSES.toString(), JsonObject.of("houseNumber", houseNumber), {
+                findOneAndDelete(Collections.HOUSES.toString(), JsonObject.of("houseNumber", houseNumber), {
                     response.end(getResponse(OK.code(), "Deleted house successfully"))
                 }, {
                     logger.error("deleteHouse(${it.cause}) <--")

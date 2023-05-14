@@ -1,13 +1,13 @@
-version: "3"
+version: "3.8"
 services:
 
-  mongo-db:
-    container_name: mongo-db
+  mongo_db:
+    container_name: mongo_db
     image: mongo:latest
     restart: on-failure
     environment:
       - MONGO_INITDB_ROOT_USERNAME=root
-      - MONGO_INITDB_ROOT_PASSWORD=toor
+      - MONGO_INITDB_ROOT_PASSWORD=toor123
       - MONGO_INITDB_DATABASE=root_db
       - MONGO_INITDB_USERNAME=admin
       - MONGO_INITDB_PASSWORD=admin123
@@ -19,7 +19,7 @@ services:
       - network
     volumes:
       - mongo-data:/data/db:rw
-      - mongo-config:/data/configdb:rw
+      - mongo-config:/data/config/db:rw
 
 
   greenbay_api:
@@ -27,48 +27,39 @@ services:
     build: .
     restart: on-failure
     depends_on:
-      mongo-db:
+      mongo_db:
         condition: service_started
     expose:
-      - 80
+      - 8001
     ports:
-      - "80:8000"
+      - "80:8001"
     env_file:
       - .env
-    links:
-      - mongo-db:mongo-db
-    networks:
-      - network
 
-  mongo-express:
+
+  mongo_express:
     image: mongo-express
     restart: on-failure
     depends_on:
-      mongo-db:
+      mongo_db:
         condition: service_started
     environment:
-      - ME_CONFIG_MONGODB_SERVER=mongo-db
+      - ME_CONFIG_MONGODB_SERVER=mongo_db
       - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
       - ME_CONFIG_MONGODB_ADMINUSERNAME=root
-      - ME_CONFIG_MONGODB_ADMINPASSWORD=toor
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=toor123
       - ME_CONFIG_BASICAUTH_USERNAME=admin
       - ME_CONFIG_BASICAUTH_PASSWORD=admin123
     expose:
       - 5001
     ports:
       - "5001:8081"
-    networks:
-      - network
-    links:
-      - mongo-db:mongo-db
+
 
 volumes:
   mongo-data:
   mongo-config:
 
-networks:
-  network:
-    driver: bridge
 
 
 

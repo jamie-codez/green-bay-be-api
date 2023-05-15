@@ -7,6 +7,7 @@ import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+import java.awt.SystemTray
 import java.util.*
 
 @Suppress("LABEL_NAME_CLASH")

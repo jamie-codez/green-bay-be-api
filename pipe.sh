@@ -1,4 +1,5 @@
 rm -rf build
-sudo docker rmi greenbay_api
+docker rmi -f green-bay-be-api-greenbay_api
 ./gradlew build
+docker compose build
 docker compose up

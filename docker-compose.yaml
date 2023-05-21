@@ -15,11 +15,11 @@ services:
       - 9000
     ports:
       - "9000:27017"
-    networks:
-      - network
     volumes:
       - mongo-data:/data/db:rw
       - mongo-config:/data/config/db:rw
+    networks:
+      - green_bay
 
 
   greenbay_api:
@@ -27,22 +27,22 @@ services:
     build: .
     restart: on-failure
     depends_on:
-      mongo_db:
-        condition: service_started
+      - mongo_db
     expose:
       - 8001
     ports:
       - "80:8001"
     env_file:
       - .env
+    networks:
+      - green_bay
 
 
   mongo_express:
     image: mongo-express
     restart: on-failure
     depends_on:
-      mongo_db:
-        condition: service_started
+      - mongo_db
     environment:
       - ME_CONFIG_MONGODB_SERVER=mongo_db
       - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
@@ -54,11 +54,18 @@ services:
       - 5001
     ports:
       - "5001:8081"
-
+    networks:
+      - green_bay
 
 volumes:
   mongo-data:
   mongo-config:
+
+networks:
+  green_bay:
+    driver: bridge
+
+
 
 
 

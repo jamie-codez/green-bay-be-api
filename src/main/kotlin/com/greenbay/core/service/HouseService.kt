@@ -34,7 +34,7 @@ open class HouseService : UserService() {
                 body.put("occupied", false)
                 save(Collections.HOUSES.toString(), body, {
                     response.end(getResponse(CREATED.code(), "Houses created successfully"))
-                }, {error->
+                }, { error ->
                     logger.error("createHouse(${error.cause} adding) <--")
                     response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "House already exists"))
                 })
@@ -42,7 +42,7 @@ open class HouseService : UserService() {
                 logger.error("createHouse(${it.cause} checking) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "House already exists"))
             })
-        }, "houseNumber", "rent", "deposit","floorNumber")
+        }, "houseNumber", "rent", "deposit", "floorNumber")
         logger.info("createHouse() <--")
     }
 
@@ -64,10 +64,10 @@ open class HouseService : UserService() {
                             "rent", 1,
                             "deposit", 1,
                             "occupied", 1,
-                            "floorNumber",1,
-                            "createdBy",1,
-                            "createdOn",1
-                            )
+                            "floorNumber", 1,
+                            "createdBy", 1,
+                            "createdOn", 1
+                        )
                     )
                 )
             aggregate(Collections.HOUSES.toString(), pipeline, {
@@ -81,20 +81,20 @@ open class HouseService : UserService() {
         logger.info("getHouses() <--")
     }
 
-    private fun searchHouse(rc: RoutingContext){
+    private fun searchHouse(rc: RoutingContext) {
         logger.info("searchHouse() -->")
         execute("searchHouse", rc, "admin", { _, _, response ->
             val pageNumber = Integer.parseInt(rc.request().getParam("pageNumber")) - 1
-            val term = rc.request().getParam("term")?:""
+            val term = rc.request().getParam("term") ?: ""
             val limit = 20
             val skip = pageNumber * limit
-            if (term.isEmpty()){
-                response.end(getResponse(BAD_REQUEST.code(),"Expected param search-term"))
+            if (term.isEmpty()) {
+                response.end(getResponse(BAD_REQUEST.code(), "Expected param search-term"))
                 return@execute
             }
-            val query = JsonObject.of("\$text",JsonObject.of("\$search",term))
+            val query = JsonObject.of("\$text", JsonObject.of("\$search", term))
             val pipeline = JsonArray()
-                .add(JsonObject.of("\$match",query))
+                .add(JsonObject.of("\$match", query))
                 .add(JsonObject.of("\$skip", skip))
                 .add(JsonObject.of("\$limit", limit))
                 .add(JsonObject.of("\$sort", 1))
@@ -106,19 +106,24 @@ open class HouseService : UserService() {
                             "rent", 1,
                             "deposit", 1,
                             "occupied", 1,
-                            "floorNumber",1,
-                            "createdBy",1,
-                            "createdOn",1
+                            "floorNumber", 1,
+                            "createdBy", 1,
+                            "createdOn", 1
                         )
                     )
                 )
-            aggregate(Collections.HOUSES.toString(), pipeline, {
-                val paging = JsonObject.of("page", pageNumber, "sorted", true)
-                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
+            createIndex(Collections.HOUSES.toString(), JsonObject.of("houseNumber", 1), {
+                aggregate(Collections.HOUSES.toString(), pipeline, {
+                    val paging = JsonObject.of("page", pageNumber, "sorted", true)
+                    response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
+                }, {
+                    logger.error("searchHouse(${it.cause}) <--")
+                    response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
+                })
             }, {
-                logger.error("searchHouse(${it.cause}) <--")
-                response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
+                logger.error("searchHouse(${it.message} -> Failed to create index) <--")
             })
+
         })
         logger.info("searchHouse() <--")
     }

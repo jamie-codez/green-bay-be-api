@@ -135,4 +135,19 @@ open class DatabaseUtils : AbstractVerticle() {
             fail(Throwable("Error occurred"))
         }
     }
+
+    open fun createIndex(
+        collection: String,
+        query: JsonObject,
+        success: (result:Void) -> Unit,
+        fail: (throwable: Throwable) -> Unit
+    ) {
+        this.getDBClient().createIndex(collection,query){
+            if (it.succeeded()){
+                success(it.result())
+            }else{
+                fail(it.cause())
+            }
+        }
+    }
 }

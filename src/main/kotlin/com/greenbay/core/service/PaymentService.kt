@@ -101,7 +101,7 @@ open class PaymentService : TenantService() {
                 response.end(getResponse(BAD_REQUEST.code(), "Expected search term"))
                 return@execute
             }
-            val query = JsonObject.of("\$text", JsonObject.of("\$search", term))
+            val query = JsonObject.of("\$firstName", JsonObject.of("\$regex", term,"\$options","i"))
             val pipeline = JsonArray()
                 .add(JsonObject.of("\$match", query))
                 .add(

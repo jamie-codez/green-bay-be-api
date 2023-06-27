@@ -20,7 +20,7 @@ open class GreenBayService(serverPort: Int) : STKService() {
     init {
         port = serverPort
     }
-    constructor() : this(Integer.parseInt(8001))
+    constructor() : this(8001)
 
     override fun start(startPromise: Promise<Void>) {
         val vertx = this.getVertx()

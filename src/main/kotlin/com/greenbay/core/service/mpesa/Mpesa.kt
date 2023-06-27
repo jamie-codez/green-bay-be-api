@@ -18,13 +18,12 @@ class Mpesa {
 
         private fun authenticate(customerId: String, customerSecret: String): String {
             logger.info("authenticate() -->")
-            val password = "$customerId:$customerSecret"
-            val passKey = encodePass(customerId,customerSecret)
+            val passKey = encodePass(customerId, customerSecret)
             val base64Password = Base64.getEncoder().encodeToString(passKey.toByteArray())
             val client = client()
             val body = "".toRequestBody("application/json".toMediaTypeOrNull())
             val request = Request.Builder()
-                .url("")
+                .url("https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials")
                 .method("GET", body)
                 .addHeader("Authorization", "Bearer $base64Password")
                 .addHeader("Accepts", "application/json")
@@ -82,7 +81,7 @@ class Mpesa {
         fun getPassword(shortCode: String, passKey: String) =
             Base64.getEncoder().encodeToString("$shortCode$passKey${getTimeStamp()}".toByteArray())
 
-
+        @JvmStatic
         fun client(): OkHttpClient =
             OkHttpClient.Builder()
                 .callTimeout(10000, TimeUnit.MILLISECONDS)
@@ -94,7 +93,7 @@ class Mpesa {
                 .addInterceptor(interceptor())
                 .build()
 
-
+        @JvmStatic
         private fun interceptor(): HttpLoggingInterceptor =
             HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BODY

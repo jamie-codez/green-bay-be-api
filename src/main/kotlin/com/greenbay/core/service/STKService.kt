@@ -2,17 +2,12 @@ package com.greenbay.core.service
 
 import com.greenbay.core.service.mpesa.Mpesa
 import com.greenbay.core.utils.randomAlphabetic
-import com.sun.tools.javac.util.StringUtils
 import io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST
 import io.netty.handler.codec.http.HttpResponseStatus.OK
-import io.netty.util.internal.StringUtil
 import io.vertx.core.impl.logging.LoggerFactory
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
-import java.awt.AlphaComposite
-import java.util.UUID
-import kotlin.random.Random
 
 open class STKService : AuthService() {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)

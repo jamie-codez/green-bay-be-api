@@ -22,10 +22,8 @@ open class DatabaseUtils : AbstractVerticle() {
             "connectTimeoutMS", 5_000,
             "maxIdleTimeMS", 90_000,
             "autoReconnect", true,
-            "db_name", System.getenv("GB_DB_NAME"),
-            "url", System.getenv("GB_DB_CON_STRING"),
-            "username", System.getenv("GB_DB_USERNAME"),
-            "password", System.getenv("GB_DB_PASSWORD"),
+            "db_name", "greenbay_db",
+            "url", "",
             "authSource", "admin"
         )
 

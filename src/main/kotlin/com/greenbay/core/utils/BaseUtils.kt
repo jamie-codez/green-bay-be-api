@@ -31,8 +31,8 @@ open class BaseUtils : DatabaseUtils() {
     fun generateAccessJwt(email: String): String {
         return JWT.create().withSubject(email).withIssuer(System.getenv("ISSUER"))
             .withExpiresAt(Date(System.currentTimeMillis() + (60 * 60 * 24 * 7 * 1000L)))
-            .withAudience(System.getenv("AUDIENCE")).withIssuedAt(Date(System.currentTimeMillis()))
-            .sign(Algorithm.HMAC256(System.getenv("JWT_SECRET")))
+            .withAudience("greenbay.com").withIssuedAt(Date(System.currentTimeMillis()))
+            .sign(Algorithm.HMAC256("werdtfyuhijhgfdsfghjkuytrewdfghj"))
     }
 
     /**
@@ -41,8 +41,8 @@ open class BaseUtils : DatabaseUtils() {
     fun generateRefreshJwt(email: String): String {
         return JWT.create().withSubject(email).withIssuer(System.getenv("ISSUER"))
             .withExpiresAt(Date(System.currentTimeMillis() + (60 * 60 * 24 * 30 * 1000L)))
-            .withAudience(System.getenv("AUDIENCE")).withIssuedAt(Date(System.currentTimeMillis()))
-            .sign(Algorithm.HMAC256(System.getenv("JWT_SECRET")))
+            .withAudience("greenbay.com").withIssuedAt(Date(System.currentTimeMillis()))
+            .sign(Algorithm.HMAC256("werdtfyuhijhgfdsfghjkuytrewdfghj"))
     }
 
     /**
@@ -170,9 +170,9 @@ open class BaseUtils : DatabaseUtils() {
     ) {
         logger.info("verifyAccess($task) -->")
         val decodedJwt = JWT.decode(jwt)
-        val verifier = JWT.require(Algorithm.HMAC256(System.getenv("JWT_SECRET")))
-            .withAudience(System.getenv("AUDIENCE"))
-            .withIssuer(System.getenv("ISSUER")).build()
+        val verifier = JWT.require(Algorithm.HMAC256("werdtfyuhijhgfdsfghjkuytrewdfghj"))
+            .withAudience("greenbay.com")
+            .withIssuer("greenbay.com").build()
         val decodedToken = verifier.verify(decodedJwt)
         val subject = decodedToken.subject
         val expiresAt = decodedToken.expiresAt
@@ -185,7 +185,7 @@ open class BaseUtils : DatabaseUtils() {
             res.end(getResponse(UNAUTHORIZED.code(), "Token expired"))
             return
         }
-        if (issuer != System.getenv("GB_JWT_ISSUER")) {
+        if (issuer != "greenbay.com") {
             res.end(getResponse(BAD_REQUEST.code(), "Seems you are lost"))
             return
         }

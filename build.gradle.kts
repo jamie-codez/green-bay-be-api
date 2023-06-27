@@ -47,6 +47,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.3.2")
     testImplementation("io.vertx:vertx-junit5")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.3.2")
+    implementation(kotlin("stdlib-jdk8"))
 }
 
 
@@ -70,4 +71,5 @@ tasks.test {
 
 kotlin {
     jvmToolchain(8)
+    jvmToolchain(11)
 }

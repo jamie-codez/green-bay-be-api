@@ -22,11 +22,11 @@ open class DatabaseUtils : AbstractVerticle() {
             "connectTimeoutMS", 50_000,
             "maxIdleTimeMS", 90_000,
             "autoReconnect", true,
+            "connection_string", System.getenv("GB_DB_CON_STRING"),
             "db_name", System.getenv("GB_DB_NAME"),
-            "url", System.getenv("GB_DB_CON_STRING"),
             "username", System.getenv("GB_DB_USERNAME"),
             "password", System.getenv("GB_DB_PASSWORD"),
-            "authSource", "admin"
+            "authSource", System.getenv("GB_DB_AUTH_SOURCE")
         )
 
     fun getDBClient(): MongoClient = this.dbClient
@@ -103,13 +103,13 @@ open class DatabaseUtils : AbstractVerticle() {
     open fun createIndex(
         collection: String,
         query: JsonObject,
-        success: (result:Void) -> Unit,
+        success: (result: Void) -> Unit,
         fail: (throwable: Throwable) -> Unit
     ) {
-        this.getDBClient().createIndex(collection,query){
-            if (it.succeeded()){
+        this.getDBClient().createIndex(collection, query) {
+            if (it.succeeded()) {
                 success(it.result())
-            }else{
+            } else {
                 fail(it.cause())
             }
         }

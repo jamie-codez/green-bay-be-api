@@ -1,9 +1,10 @@
 package com.greenbay.core.service
 
 import com.greenbay.core.service.mpesa.Mpesa
+import com.greenbay.core.service.mpesa.Mpesa.Companion.getPassword
+import com.greenbay.core.service.mpesa.Mpesa.Companion.getTimeStamp
 import com.greenbay.core.utils.randomAlphabetic
-import io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST
-import io.netty.handler.codec.http.HttpResponseStatus.OK
+import io.netty.handler.codec.http.HttpResponseStatus.*
 import io.vertx.core.impl.logging.LoggerFactory
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Router
@@ -15,6 +16,7 @@ open class STKService : AuthService() {
 
     fun setSTKRoutes(router: Router) {
         router.post("/stk-push").handler(::stkPushExpress)
+        router.post("/registerCallBack").handler(::registerMpesaCallback)
         router.post("/callback").handler(::callback)
         setAuthRoutes(router)
     }
@@ -33,15 +35,15 @@ open class STKService : AuthService() {
             val referenceId = string.randomAlphabetic(8)
             amount = 0.toString()
             val payload = JsonObject()
-                .put("BusinessShortCode", "174379")
-                .put("Password", Mpesa.getPassword(shortCode, passKey))
-                .put("Timestamp", "20160216165627")
+                .put("BusinessShortCode", System.getenv("GB_MPESA_BUSINESS_NUMBER"))
+                .put("Password", getPassword(shortCode, passKey))
+                .put("Timestamp", getTimeStamp())
                 .put("TransactionType", "CustomerPayBillOnline")
                 .put("Amount", amount)
                 .put("PartyA", phone)
                 .put("PartyB", shortCode)
                 .put("PhoneNumber", phone)
-                .put("CallBackURL", "https://mydomain.com/pat")
+                .put("CallBackURL", System.getenv("GB_MPESA_CALLBACK"))
                 .put("AccountReference", "GreenBay-${referenceId}")
                 .put("TransactionDesc", "Rent")
 
@@ -70,14 +72,34 @@ open class STKService : AuthService() {
         } else if (phone.startsWith("7")) {
             "254$phone".toLong()
         } else {
-            Long.MAX_VALUE
+            phone.toLong()
         }
     }
 
-    private fun callback(rc: RoutingContext) {
+    private fun registerMpesaCallback(rc: RoutingContext) {
         logger.info("callback() -->")
         execute("callback", rc, "admin", { user, body, response ->
-            Mpesa.registerCallback(JsonObject())
+            val res = Mpesa.registerCallback(
+                JsonObject.of(
+                    "ShortCode", System.getenv("GB_MPESA_BUSINESS_NUMBER"),
+                    "ResponseType", "Complete",
+                    "ConfirmationURL", System.getenv("GB_MPESA_CALLBACK"),
+                    "ValidationURL", System.getenv("GB_MPESA_CALLBACK")
+                )
+            )
+            if (res.getString("ResponseDescription") == "success") {
+                response.end(getResponse(OK.code(), "Callback registered successful", JsonObject()))
+                return@execute
+            }
+            response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error registering callback url", JsonObject()))
+        })
+        logger.info("callback() <--")
+    }
+
+    private fun callback(rc:RoutingContext){
+        logger.info("callback() -->")
+        execute("callback",rc,"admin",{user, body, response ->
+            logger.info("callback(${body.encodePrettily()}) <--")
         })
         logger.info("callback() <--")
     }

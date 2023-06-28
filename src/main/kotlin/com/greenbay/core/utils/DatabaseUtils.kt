@@ -22,8 +22,10 @@ open class DatabaseUtils : AbstractVerticle() {
             "connectTimeoutMS", 5_000,
             "maxIdleTimeMS", 90_000,
             "autoReconnect", true,
-            "db_name", "greenbay_db",
-            "url", "",
+            "db_name", System.getenv("GB_DB_NAME"),
+            "url", System.getenv("GB_DB_CON_STRING"),
+            "username", System.getenv("GB_DB_USERNAME"),
+            "password", System.getenv("GB_DB_PASSWORD"),
             "authSource", "admin"
         )
 
@@ -98,6 +100,21 @@ open class DatabaseUtils : AbstractVerticle() {
         }
     }
 
+    open fun createIndex(
+        collection: String,
+        query: JsonObject,
+        success: (result:Void) -> Unit,
+        fail: (throwable: Throwable) -> Unit
+    ) {
+        this.getDBClient().createIndex(collection,query){
+            if (it.succeeded()){
+                success(it.result())
+            }else{
+                fail(it.cause())
+            }
+        }
+    }
+
     open fun findOneAndDelete(
         collection: String,
         query: JsonObject,
@@ -131,21 +148,6 @@ open class DatabaseUtils : AbstractVerticle() {
         }.exceptionHandler {
             logger.error("Pipeline failed")
             fail(Throwable("Error occurred"))
-        }
-    }
-
-    open fun createIndex(
-        collection: String,
-        query: JsonObject,
-        success: (result:Void) -> Unit,
-        fail: (throwable: Throwable) -> Unit
-    ) {
-        this.getDBClient().createIndex(collection,query){
-            if (it.succeeded()){
-                success(it.result())
-            }else{
-                fail(it.cause())
-            }
         }
     }
 }

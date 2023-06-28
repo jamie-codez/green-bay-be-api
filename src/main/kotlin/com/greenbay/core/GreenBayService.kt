@@ -17,10 +17,12 @@ import java.util.*
 open class GreenBayService(serverPort: Int) : STKService() {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
     private var port: Int
+
     init {
         port = serverPort
     }
-    constructor() : this(8001)
+
+    constructor() : this(Integer.valueOf(System.getenv("GB_PORT")))
 
     override fun start(startPromise: Promise<Void>) {
         val vertx = this.getVertx()

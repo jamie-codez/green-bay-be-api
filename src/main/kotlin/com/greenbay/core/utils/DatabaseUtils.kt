@@ -18,8 +18,8 @@ open class DatabaseUtils : AbstractVerticle() {
     private fun getConfig(): JsonObject =
         JsonObject.of(
             "keepAlive", true,
-            "socketTimeoutMS", 5_000,
-            "connectTimeoutMS", 5_000,
+            "socketTimeoutMS", 50_000,
+            "connectTimeoutMS", 50_000,
             "maxIdleTimeMS", 90_000,
             "autoReconnect", true,
             "db_name", System.getenv("GB_DB_NAME"),

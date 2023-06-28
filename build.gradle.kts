@@ -38,6 +38,7 @@ dependencies {
     implementation("io.vertx:vertx-health-check")
     implementation("com.auth0:java-jwt:4.2.2")
     implementation("org.slf4j:slf4j-api:2.0.7")
+    implementation("commons-logging:commons-logging:1.2")
     implementation("org.springframework.security:spring-security-crypto:5.5.4")
     implementation(platform("com.squareup.okhttp3:okhttp-bom:4.10.0"))
     implementation("com.squareup.okhttp3:okhttp")

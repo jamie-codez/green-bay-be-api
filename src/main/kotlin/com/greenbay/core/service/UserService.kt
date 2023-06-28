@@ -60,7 +60,7 @@ open class UserService : BaseUtils() {
                 } else {
                     body.put("addedBy", body.getString("email"))
                         .put("roles", JsonObject.of("user", true, "admin", true, "manager", true))
-                        .put("addedOn", Date(System.currentTimeMillis()))
+                        .put("addedOn", System.currentTimeMillis())
                     val encodedPassword = BCryptPasswordEncoder().encode(body.getString("password"))
                     body.remove("password")
                     body.put("password", encodedPassword)

@@ -74,7 +74,7 @@ open class DatabaseUtils : AbstractVerticle() {
         this.getDBClient().findOne(collection, query, JsonObject()) {
             if (it.succeeded()) {
                 logger.info("Retrieve successful")
-                success(it.result())
+                success(it.result()?:JsonObject())
             } else {
                 logger.error("Error fetching document")
                 fail(it.cause())
@@ -92,7 +92,7 @@ open class DatabaseUtils : AbstractVerticle() {
         this.getDBClient().findOneAndUpdate(collection, query, update) {
             if (it.succeeded()) {
                 logger.info("Update successful ${query.encodePrettily()} -->")
-                success(it.result())
+                success(it.result()?:JsonObject())
             } else {
                 logger.error("Update failed ${query.encodePrettily()} -->")
                 fail(it.cause())
@@ -124,7 +124,7 @@ open class DatabaseUtils : AbstractVerticle() {
         this.getDBClient().findOneAndDelete(collection, query) {
             if (it.succeeded()) {
                 logger.info("Delete successful ${query.encodePrettily()} -->")
-                success(it.result())
+                success(it.result()?:JsonObject())
             } else {
                 logger.error("Error deleting ${query.encodePrettily()} -->")
                 fail(it.cause())

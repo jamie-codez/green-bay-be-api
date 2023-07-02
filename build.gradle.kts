@@ -38,6 +38,7 @@ dependencies {
     implementation("io.vertx:vertx-health-check")
     implementation("com.auth0:java-jwt:4.2.2")
     implementation("org.slf4j:slf4j-api:2.0.7")
+    implementation("commons-logging:commons-logging:1.2")
     implementation("org.springframework.security:spring-security-crypto:5.5.4")
     implementation(platform("com.squareup.okhttp3:okhttp-bom:4.10.0"))
     implementation("com.squareup.okhttp3:okhttp")
@@ -47,6 +48,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.3.2")
     testImplementation("io.vertx:vertx-junit5")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.3.2")
+    implementation(kotlin("stdlib-jdk8"))
 }
 
 
@@ -70,4 +72,5 @@ tasks.test {
 
 kotlin {
     jvmToolchain(8)
+    jvmToolchain(11)
 }

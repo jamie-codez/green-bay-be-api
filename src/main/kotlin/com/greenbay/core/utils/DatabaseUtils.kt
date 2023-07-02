@@ -18,15 +18,15 @@ open class DatabaseUtils : AbstractVerticle() {
     private fun getConfig(): JsonObject =
         JsonObject.of(
             "keepAlive", true,
-            "socketTimeoutMS", 5_000,
-            "connectTimeoutMS", 5_000,
+            "socketTimeoutMS", 50_000,
+            "connectTimeoutMS", 50_000,
             "maxIdleTimeMS", 90_000,
             "autoReconnect", true,
+            "connection_string", System.getenv("GB_DB_CON_STRING"),
             "db_name", System.getenv("GB_DB_NAME"),
-            "url", System.getenv("GB_DB_CON_STRING"),
             "username", System.getenv("GB_DB_USERNAME"),
             "password", System.getenv("GB_DB_PASSWORD"),
-            "authSource", "admin"
+            "authSource", System.getenv("GB_DB_AUTH_SOURCE")
         )
 
     fun getDBClient(): MongoClient = this.dbClient
@@ -74,7 +74,7 @@ open class DatabaseUtils : AbstractVerticle() {
         this.getDBClient().findOne(collection, query, JsonObject()) {
             if (it.succeeded()) {
                 logger.info("Retrieve successful")
-                success(it.result())
+                success(it.result()?:JsonObject())
             } else {
                 logger.error("Error fetching document")
                 fail(it.cause())
@@ -92,9 +92,24 @@ open class DatabaseUtils : AbstractVerticle() {
         this.getDBClient().findOneAndUpdate(collection, query, update) {
             if (it.succeeded()) {
                 logger.info("Update successful ${query.encodePrettily()} -->")
-                success(it.result())
+                success(it.result()?:JsonObject())
             } else {
                 logger.error("Update failed ${query.encodePrettily()} -->")
+                fail(it.cause())
+            }
+        }
+    }
+
+    open fun createIndex(
+        collection: String,
+        query: JsonObject,
+        success: (result: Void) -> Unit,
+        fail: (throwable: Throwable) -> Unit
+    ) {
+        this.getDBClient().createIndex(collection, query) {
+            if (it.succeeded()) {
+                success(it.result())
+            } else {
                 fail(it.cause())
             }
         }
@@ -109,7 +124,7 @@ open class DatabaseUtils : AbstractVerticle() {
         this.getDBClient().findOneAndDelete(collection, query) {
             if (it.succeeded()) {
                 logger.info("Delete successful ${query.encodePrettily()} -->")
-                success(it.result())
+                success(it.result()?:JsonObject())
             } else {
                 logger.error("Error deleting ${query.encodePrettily()} -->")
                 fail(it.cause())

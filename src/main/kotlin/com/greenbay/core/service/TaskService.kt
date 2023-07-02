@@ -182,13 +182,24 @@ open class TaskService : CommunicationService() {
                 response.end(getResponse(BAD_REQUEST.code(), "Expected parameter id"))
                 return@execute
             }
+            if (body.containsKey("status")){
+                val completed = body.getString("status")==TaskStatus.COMPLETED.toString()
+                val started = body.getString("status")==TaskStatus.STARTED.toString()
+                body.remove("status")
+                if (completed)
+                    body.put("status",TaskStatus.STARTED.toString())
+                else if (started)
+                    body.put("status",TaskStatus.STARTED.toString())
+                else
+                    body.put("status",TaskStatus.PENDING.toString())
+            }
             val query = JsonObject.of("_id", id)
             findOne(Collections.TASKS.toString(), query, {
                 if (it.isEmpty) {
                     response.end(getResponse(NOT_FOUND.code(), "Task not found"))
                     return@findOne
                 }
-                findAndUpdate(Collections.TASKS.toString(), query,body, {
+                findAndUpdate(Collections.TASKS.toString(), query, body, {
                     response.end(getResponse(OK.code(), "Task updated successfully"))
                 }, { err ->
                     logger.error("updateTask(${err.cause} -> updatingTask) <--")

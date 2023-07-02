@@ -7,6 +7,7 @@ import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+import java.awt.SystemTray
 import java.util.*
 
 @Suppress("LABEL_NAME_CLASH")
@@ -25,7 +26,7 @@ open class AuthService : TaskService() {
     private fun login(rc: RoutingContext) {
         logger.info("login() -->")
         execute("login", rc, { body, response ->
-            val query = JsonObject.of("email", body.getJsonObject("email"))
+            val query = JsonObject.of("email", body.getString("email"))
             findOne(Collections.APP_USERS.toString(), query, {
                 if (it.isEmpty) {
                     response.end(getResponse(NOT_FOUND.code(), "User does not exists"))

@@ -29,20 +29,20 @@ open class BaseUtils : DatabaseUtils() {
      * Generates an access token with a 1-week expiry
      */
     fun generateAccessJwt(email: String): String {
-        return JWT.create().withSubject(email).withIssuer(System.getenv("ISSUER"))
+        return JWT.create().withSubject(email).withIssuer(System.getenv("GB_JWT_ISSUER"))
             .withExpiresAt(Date(System.currentTimeMillis() + (60 * 60 * 24 * 7 * 1000L)))
-            .withAudience(System.getenv("AUDIENCE")).withIssuedAt(Date(System.currentTimeMillis()))
-            .sign(Algorithm.HMAC256(System.getenv("JWT_SECRET")))
+            .withAudience(System.getenv("GB_JWT_ISSUER")).withIssuedAt(Date(System.currentTimeMillis()))
+            .sign(Algorithm.HMAC256(System.getenv("GB_JWT_SECRET")))
     }
 
     /**
      * Generates a refresh token a week expiry
      */
     fun generateRefreshJwt(email: String): String {
-        return JWT.create().withSubject(email).withIssuer(System.getenv("ISSUER"))
+        return JWT.create().withSubject(email).withIssuer(System.getenv("GB_JWT_ISSUER"))
             .withExpiresAt(Date(System.currentTimeMillis() + (60 * 60 * 24 * 30 * 1000L)))
-            .withAudience(System.getenv("AUDIENCE")).withIssuedAt(Date(System.currentTimeMillis()))
-            .sign(Algorithm.HMAC256(System.getenv("JWT_SECRET")))
+            .withAudience(System.getenv("GB_JWT_ISSUER")).withIssuedAt(Date(System.currentTimeMillis()))
+            .sign(Algorithm.HMAC256(System.getenv("GB_JWT_SECRET")))
     }
 
     /**
@@ -171,8 +171,8 @@ open class BaseUtils : DatabaseUtils() {
         logger.info("verifyAccess($task) -->")
         val decodedJwt = JWT.decode(jwt)
         val verifier = JWT.require(Algorithm.HMAC256(System.getenv("JWT_SECRET")))
-            .withAudience(System.getenv("AUDIENCE"))
-            .withIssuer(System.getenv("ISSUER")).build()
+            .withAudience("greenbay.com")
+            .withIssuer("greenbay.com").build()
         val decodedToken = verifier.verify(decodedJwt)
         val subject = decodedToken.subject
         val expiresAt = decodedToken.expiresAt
@@ -185,7 +185,7 @@ open class BaseUtils : DatabaseUtils() {
             res.end(getResponse(UNAUTHORIZED.code(), "Token expired"))
             return
         }
-        if (issuer != System.getenv("GB_JWT_ISSUER")) {
+        if (issuer != "greenbay.com") {
             res.end(getResponse(BAD_REQUEST.code(), "Seems you are lost"))
             return
         }

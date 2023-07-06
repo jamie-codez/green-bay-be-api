@@ -94,8 +94,8 @@ open class BaseUtils : DatabaseUtils() {
             response.end(getResponse(UNAUTHORIZED.code(), "User account not verified"))
             return
         }
-        if (hasValues(body, *values)) {
-            logger.info("missing field : [${values.contentDeepToString()}")
+        if (!hasValues(body, *values)) {
+            logger.info("missing field : [${values.contentDeepToString()}]")
             response.end(getResponse(BAD_REQUEST.code(), "expected fields [${values.contentDeepToString()}]"))
             return
         }
@@ -170,7 +170,7 @@ open class BaseUtils : DatabaseUtils() {
     ) {
         logger.info("verifyAccess($task) -->")
         val decodedJwt = JWT.decode(jwt)
-        val verifier = JWT.require(Algorithm.HMAC256(System.getenv("JWT_SECRET")))
+        val verifier = JWT.require(Algorithm.HMAC256(System.getenv("GB_JWT_SECRET")))
             .withAudience("greenbay.com")
             .withIssuer("greenbay.com").build()
         val decodedToken = verifier.verify(decodedJwt)

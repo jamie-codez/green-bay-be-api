@@ -41,7 +41,13 @@ open class AuthService : TaskService() {
                         response
                             .putHeader("access-token", jwt)
                             .putHeader("refresh-token", refresh)
-                        response.end(getResponse(OK.code(), "Login successful"))
+                        response.end(
+                            getResponse(
+                                OK.code(),
+                                "Login successful",
+                                JsonObject.of("accessToken", jwt, "refreshToken", refresh)
+                            )
+                        )
                     }, { thr ->
                         logger.error("login(${thr.cause}) <--")
                         response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
@@ -94,7 +100,11 @@ open class AuthService : TaskService() {
                     val scheme = rc.request().scheme()
                     val address = rc.request().localAddress().hostAddress()
                     val port = rc.request().localAddress().port()
-                    val htmlText = "$scheme://$address:$port/code/$email/$code"
+                    val htmlText =  if(System.getenv("GB_ENVIRONMENT")=="development" || System.getenv("GB_ENVIRONMENT").isNullOrEmpty()){
+                        "$scheme://$address:$port/code/$email/$code"
+                    }else{
+                        "${System.getenv("GB_HOST_URL")}/code/$email/$code"
+                    }
                     val htmlString = String.format("<a href=%s\">click Here</a>", htmlText)
                     val mailBody = "Click link to reset password."
                     sendEmail(email, "Password Reset", mailBody, htmlString, success = {

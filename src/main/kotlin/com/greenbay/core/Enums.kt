@@ -8,6 +8,7 @@ enum class Collections(private var value: String) {
     PAYMENTS("payments"),
     SESSIONS("sessions"),
     RESET_CODES("reset_codes"),
+    ACTIVATION_CODES("activation_codes"),
     TASKS("TASKS"),
     COMMUNICATIONS("communications");
 

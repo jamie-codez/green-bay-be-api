@@ -7,6 +7,7 @@ import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
+import java.util.regex.Pattern
 
 open class TenantService : HouseService() {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
@@ -58,51 +59,66 @@ open class TenantService : HouseService() {
     private fun getTenants(rc: RoutingContext) {
         logger.info("getTenants() -->")
         execute("getTenants", rc, "admin", { _, _, response ->
-            val pageNumber = Integer.valueOf(rc.request().getParam("pageNumber"))-1
+            val pageNumber = Integer.valueOf(rc.request().getParam("pageNumber")) - 1
             val limit = 20
             val skip = pageNumber * limit
             val pipeline = JsonArray()
-                .add(JsonObject.of("\$lookup",JsonObject
-                    .of(
-                        "from","app_users",
-                        "localField","client",
-                        "foreignField","email",
-                        "as","user"
+                .add(
+                    JsonObject.of(
+                        "\$lookup", JsonObject
+                            .of(
+                                "from", "app_users",
+                                "localField", "client",
+                                "foreignField", "email",
+                                "as", "user"
+                            )
                     )
-                ))
-                .add(JsonObject.of("\$lookup",JsonObject
-                    .of(
-                        "from","houses",
-                        "localField","houseNumber",
-                        "foreignField","houseNumber",
-                        "as","house"
+                )
+                .add(
+                    JsonObject.of(
+                        "\$lookup", JsonObject
+                            .of(
+                                "from", "houses",
+                                "localField", "houseNumber",
+                                "foreignField", "houseNumber",
+                                "as", "house"
+                            )
                     )
-                ))
-                .add(JsonObject.of("\$unwind",JsonObject
-                    .of(
-                        "path","\$user",
-                        "preserveNullAndEmptyArrays",true
+                )
+                .add(
+                    JsonObject.of(
+                        "\$unwind", JsonObject
+                            .of(
+                                "path", "\$user",
+                                "preserveNullAndEmptyArrays", true
+                            )
                     )
-                ))
-                .add(JsonObject.of("\$unwind",JsonObject
-                    .of(
-                        "path","\$house",
-                        "preserveNullAndEmptyArrays",true
+                )
+                .add(
+                    JsonObject.of(
+                        "\$unwind", JsonObject
+                            .of(
+                                "path", "\$house",
+                                "preserveNullAndEmptyArrays", true
+                            )
                     )
-                ))
-                .add(JsonObject.of("\$project",JsonObject
-                    .of(
-                        "_id","\$_id",
-                        "firstName","\$user.firstName",
-                        "lastName","\$user.lastName",
-                        "email","\$user.email",
-                        "phone","\$user.phoneNumber",
-                        "houseNumber","\$house.houseNumber",
-                        "rent","\$house.rent",
-                        "deposit","\$house.deposit",
-                        "floorNumber","\$house.floorNumber"
+                )
+                .add(
+                    JsonObject.of(
+                        "\$project", JsonObject
+                            .of(
+                                "_id", "\$_id",
+                                "firstName", "\$user.firstName",
+                                "lastName", "\$user.lastName",
+                                "email", "\$user.email",
+                                "phone", "\$user.phoneNumber",
+                                "houseNumber", "\$house.houseNumber",
+                                "rent", "\$house.rent",
+                                "deposit", "\$house.deposit",
+                                "floorNumber", "\$house.floorNumber"
+                            )
                     )
-                ))
+                )
                 .add(JsonObject.of("\$skip", skip))
                 .add(JsonObject.of("\$limit", limit))
                 .add(JsonObject.of("\$sort", 1))
@@ -117,61 +133,83 @@ open class TenantService : HouseService() {
         logger.info("getTenants() <--")
     }
 
-    private fun searchTenant(rc: RoutingContext){
+    private fun searchTenant(rc: RoutingContext) {
         logger.info("searchTenants() -->")
         execute("searchTenants", rc, "admin", { _, _, response ->
-            val pageNumber = Integer.valueOf(rc.request().getParam("pageNumber"))-1
-            val term = rc.request().getParam("term")?:""
+            val pageNumber = Integer.valueOf(rc.request().getParam("pageNumber")) - 1
+            val term = rc.request().getParam("term") ?: ""
             val limit = 20
             val skip = pageNumber * limit
-            if (term.isEmpty()){
-                response.end(getResponse(BAD_REQUEST.code(),"Expected search term"))
+            if (term.isEmpty()) {
+                response.end(getResponse(BAD_REQUEST.code(), "Expected search term"))
                 return@execute
             }
-            val query = JsonObject.of("\$text",JsonObject.of("\$search",term))
+            val query = JsonObject.of(
+                "\$or",
+                JsonArray.of(
+                    JsonObject.of("house.houseNumber", JsonObject.of("\$regex", term, "\$options", "i")),
+                    JsonObject.of("user.username", JsonObject.of("\$regex", term, "\$options", "i"))
+                )
+
+            )
             val pipeline = JsonArray()
-                .add(JsonObject.of("\$lookup",JsonObject
-                    .of(
-                        "from","app_users",
-                        "localField","client",
-                        "foreignField","email",
-                        "as","user"
+                .add(
+                    JsonObject.of(
+                        "\$lookup", JsonObject
+                            .of(
+                                "from", "app_users",
+                                "localField", "client",
+                                "foreignField", "email",
+                                "as", "user"
+                            )
                     )
-                ))
-                .add(JsonObject.of("\$lookup",JsonObject
-                    .of(
-                        "from","houses",
-                        "localField","houseNumber",
-                        "foreignField","houseNumber",
-                        "as","house"
+                )
+                .add(
+                    JsonObject.of(
+                        "\$lookup", JsonObject
+                            .of(
+                                "from", "houses",
+                                "localField", "houseNumber",
+                                "foreignField", "houseNumber",
+                                "as", "house"
+                            )
                     )
-                ))
-                .add(JsonObject.of("\$unwind",JsonObject
-                    .of(
-                        "path","\$user",
-                        "preserveNullAndEmptyArrays",true
+                )
+                .add(
+                    JsonObject.of(
+                        "\$unwind", JsonObject
+                            .of(
+                                "path", "\$user",
+                                "preserveNullAndEmptyArrays", true
+                            )
                     )
-                ))
-                .add(JsonObject.of("\$unwind",JsonObject
-                    .of(
-                        "path","\$house",
-                        "preserveNullAndEmptyArrays",true
+                )
+                .add(
+                    JsonObject.of(
+                        "\$unwind", JsonObject
+                            .of(
+                                "path", "\$house",
+                                "preserveNullAndEmptyArrays", true
+                            )
                     )
-                ))
-                .add(JsonObject.of("\$match",query))
-                .add(JsonObject.of("\$project",JsonObject
-                    .of(
-                        "_id","\$_id",
-                        "firstName","\$user.firstName",
-                        "lastName","\$user.lastName",
-                        "email","\$user.email",
-                        "phone","\$user.phoneNumber",
-                        "houseNumber","\$house.houseNumber",
-                        "rent","\$house.rent",
-                        "deposit","\$house.deposit",
-                        "floorNumber","\$house.floorNumber"
+                )
+                .add(JsonObject.of("\$match", query))
+                .add(
+                    JsonObject.of(
+                        "\$project", JsonObject
+                            .of(
+                                "_id", "\$_id",
+                                "firstName", "\$user.firstName",
+                                "lastName", "\$user.lastName",
+                                "email", "\$user.email",
+                                "phone", "\$user.phoneNumber",
+                                "houseNumber", "\$house.houseNumber",
+                                "rent", "\$house.rent",
+                                "deposit", "\$house.deposit",
+                                "floorNumber", "\$house.floorNumber"
+                            )
                     )
-                ))
+                )
                 .add(JsonObject.of("\$skip", skip))
                 .add(JsonObject.of("\$limit", limit))
                 .add(JsonObject.of("\$sort", 1))

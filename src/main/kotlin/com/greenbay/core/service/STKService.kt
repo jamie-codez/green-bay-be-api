@@ -1,5 +1,6 @@
 package com.greenbay.core.service
 
+import com.greenbay.core.Collections
 import com.greenbay.core.service.mpesa.Mpesa
 import com.greenbay.core.service.mpesa.Mpesa.Companion.getPassword
 import com.greenbay.core.service.mpesa.Mpesa.Companion.getTimeStamp
@@ -96,10 +97,13 @@ open class STKService : AuthService() {
         logger.info("callback() <--")
     }
 
-    private fun callback(rc:RoutingContext){
+    private fun callback(rc: RoutingContext) {
         logger.info("callback() -->")
-        execute("callback",rc,"admin",{user, body, response ->
-            logger.info("callback(${body.encodePrettily()}) <--")
+        val requestBody = rc.body().asJsonObject()
+        save(Collections.CALL_BACKS.toString(), requestBody, {
+            logger.info("callback(Callback data saved successfully) <--")
+        }, {
+            logger.error("callback(${it.message} -> Error saving callback data) <--", it)
         })
         logger.info("callback() <--")
     }

@@ -79,7 +79,7 @@ open class STKService : AuthService() {
 
     private fun registerMpesaCallback(rc: RoutingContext) {
         logger.info("callback() -->")
-        execute("callback", rc, "admin", { user, body, response ->
+        execute("callback", rc, "admin", { _, _, response ->
             val res = Mpesa.registerCallback(
                 JsonObject.of(
                     "ShortCode", System.getenv("GB_MPESA_BUSINESS_NUMBER"),

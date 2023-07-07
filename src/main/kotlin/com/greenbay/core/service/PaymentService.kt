@@ -79,8 +79,9 @@ open class PaymentService : TenantService() {
                 )
                 .add(JsonObject.of("\$skip", skip))
                 .add(JsonObject.of("\$limit", limit))
+                .add(JsonObject.of("_id",-1))
             aggregate(Collections.PAYMENTS.toString(), pipeline, {
-                val paging = JsonObject.of("page", pageNumber, "sorted", false)
+                val paging = JsonObject.of("page", pageNumber, "sorted", true)
                 response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
                 logger.error("getPayments(${it.message} -> ${it.cause})")

@@ -55,7 +55,7 @@ open class HouseService : UserService() {
             val pipeline = JsonArray()
                 .add(JsonObject.of("\$skip", skip))
                 .add(JsonObject.of("\$limit", limit))
-                .add(JsonObject.of("\$sort", 1))
+                .add(JsonObject.of("\$sort", JsonObject.of("_id",-1)))
                 .add(
                     JsonObject.of(
                         "\$project",

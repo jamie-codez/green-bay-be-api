@@ -65,6 +65,7 @@ open class CommunicationService : PaymentService() {
                 )
                 .add(JsonObject.of("\$limit", limit))
                 .add(JsonObject.of("\$skip", skip))
+                .add(JsonObject.of("_id", -1))
             aggregate(Collections.COMMUNICATIONS.toString(), pipeline, {
                 val paging = JsonObject.of("page", pageNumber, "sorted", false)
                 response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
@@ -87,7 +88,7 @@ open class CommunicationService : PaymentService() {
                 response.end(getResponse(BAD_REQUEST.code(), "Expected param search-term"))
                 return@execute
             }
-            val query = JsonObject.of("\$text", JsonObject.of("\$search", term))
+            val query = JsonObject.of("user.email", JsonObject.of("\$regex", term, "\$options", "i"))
             val pipeline = JsonArray()
                 .add(JsonObject.of("\$match", query))
                 .add(
@@ -149,7 +150,7 @@ open class CommunicationService : PaymentService() {
                 response.end(getResponse(BAD_REQUEST.code(), "Expected field id"))
                 return@execute
             }
-            val query = JsonObject.of("id", id)
+            val query = JsonObject.of("_id", id)
             findOneAndDelete(Collections.COMMUNICATIONS.toString(), query, {
                 response.end(getResponse(OK.code(), "Successfully deleted communication"))
             }, {

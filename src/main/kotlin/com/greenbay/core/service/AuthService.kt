@@ -20,7 +20,7 @@ open class AuthService : TaskService() {
         router.post("/sendPasswordResetEmail").handler(::sendPasswordResetEmail)
         router.get("/reset/:email").handler(::sendPasswordPage)
         router.post("/reset/:email").handler(::resetPassword)
-        setTenantRoutes(router)
+        setTaskRoutes(router)
     }
 
     private fun login(rc: RoutingContext) {

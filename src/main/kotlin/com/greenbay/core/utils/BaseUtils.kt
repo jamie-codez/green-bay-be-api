@@ -80,23 +80,27 @@ open class BaseUtils : DatabaseUtils() {
         vararg values: String
     ) {
         logger.info("bodyHandler($task) -->")
-        val body = rc.body().asJsonObject()
-        if (body.encode().length / 1024 > MAX_BODY_SIZE) {
-            response.end(
-                getResponse(
-                    REQUEST_ENTITY_TOO_LARGE.code(),
-                    "Request body is too large. [${body.encode().length / 1024} mbs]"
+        var body = JsonObject()
+        if (values.isNotEmpty()) {
+            body = rc.body().asJsonObject()
+            logger.info(body.encodePrettily())
+            if (body.encode().length / 1024 > MAX_BODY_SIZE) {
+                response.end(
+                    getResponse(
+                        REQUEST_ENTITY_TOO_LARGE.code(),
+                        "Request body is too large. [${body.encode().length / 1024} mbs]"
+                    )
                 )
-            )
-            return
+                return
+            }
+            if (!hasValues(body, *values)) {
+                logger.info("missing field : [${values.contentDeepToString()}]")
+                response.end(getResponse(BAD_REQUEST.code(), "expected fields [${values.contentDeepToString()}]"))
+                return
+            }
         }
         if (!user.getBoolean("verified")) {
             response.end(getResponse(UNAUTHORIZED.code(), "User account not verified"))
-            return
-        }
-        if (!hasValues(body, *values)) {
-            logger.info("missing field : [${values.contentDeepToString()}]")
-            response.end(getResponse(BAD_REQUEST.code(), "expected fields [${values.contentDeepToString()}]"))
             return
         }
         inject(user, body, response)

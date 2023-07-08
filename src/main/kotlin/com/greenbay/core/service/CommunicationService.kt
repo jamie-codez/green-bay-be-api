@@ -65,7 +65,7 @@ open class CommunicationService : PaymentService() {
                 )
                 .add(JsonObject.of("\$limit", limit))
                 .add(JsonObject.of("\$skip", skip))
-                .add(JsonObject.of("_id", -1))
+                .add(JsonObject.of("\$sort", JsonObject.of("_id", -1)))
             aggregate(Collections.COMMUNICATIONS.toString(), pipeline, {
                 val paging = JsonObject.of("page", pageNumber, "sorted", false)
                 response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))

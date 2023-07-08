@@ -10,8 +10,8 @@ services:
       - "80:8001"
     env_file:
       - .env
-    networks:
-      - green_bay
+#    networks:
+#      - green_bay
 
 
 #  mongo_express:
@@ -31,13 +31,13 @@ services:
 #    networks:
 #      - green_bay
 
-volumes:
-  mongo-data:
-  mongo-config:
-
-networks:
-  green_bay:
-    driver: bridge
+#volumes:
+#  mongo-data:
+#  mongo-config:
+#
+#networks:
+#  green_bay:
+#    driver: bridge
 
 
 

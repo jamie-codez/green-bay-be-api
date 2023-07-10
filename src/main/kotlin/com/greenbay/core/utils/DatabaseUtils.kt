@@ -22,11 +22,11 @@ open class DatabaseUtils : AbstractVerticle() {
             "connectTimeoutMS", 50_000,
             "maxIdleTimeMS", 90_000,
             "autoReconnect", true,
-            "connection_string", System.getenv("GB_DB_CON_STRING"),
-            "db_name", System.getenv("GB_DB_NAME"),
-            "username", System.getenv("GB_DB_USERNAME"),
-            "password", System.getenv("GB_DB_PASSWORD"),
-            "authSource", System.getenv("GB_DB_AUTH_SOURCE")
+            "connection_string", "mongodb+srv://app1.bqmqa.mongodb.net/greenbay_db?retryWrites=true&w=majority",
+            "db_name", "greenbay_db",
+            "username", "skunk",
+            "password", "g0BJX2hfxH3W6T3q",
+            "authSource", "admin"
         )
 
     fun getDBClient(): MongoClient = this.dbClient

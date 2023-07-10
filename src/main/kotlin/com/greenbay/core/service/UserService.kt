@@ -73,7 +73,7 @@ open class UserService : BaseUtils() {
     ) {
         logger.info("sendVerificationEmail() -->")
         val verificationCode = JsonObject.of("owner", email, "code", code)
-        val htmlText = "${System.getenv("GB_HOST_URL")}/user/activate/$email/$code"
+        val htmlText = "http://localhost:8080/user/activate/$email/$code"
         val link = "Click <a href=\"$htmlText\">Here</a> to activate your account"
         save(Collections.ACTIVATION_CODES.toString(), verificationCode, {
             sendEmail(

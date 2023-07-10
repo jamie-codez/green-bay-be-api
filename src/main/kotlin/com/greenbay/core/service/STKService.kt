@@ -36,7 +36,7 @@ open class STKService : AuthService() {
             val referenceId = string.randomAlphabetic(8)
             amount = 0.toString()
             val payload = JsonObject()
-                .put("BusinessShortCode", System.getenv("GB_MPESA_BUSINESS_NUMBER"))
+                .put("BusinessShortCode", "174379")
                 .put("Password", getPassword(shortCode, passKey))
                 .put("Timestamp", getTimeStamp())
                 .put("TransactionType", "CustomerPayBillOnline")
@@ -44,7 +44,7 @@ open class STKService : AuthService() {
                 .put("PartyA", phone)
                 .put("PartyB", shortCode)
                 .put("PhoneNumber", phone)
-                .put("CallBackURL", System.getenv("GB_MPESA_CALLBACK"))
+                .put("CallBackURL", "https://greenbay.com/callback")
                 .put("AccountReference", "GreenBay-${referenceId}")
                 .put("TransactionDesc", "Rent")
 
@@ -82,10 +82,10 @@ open class STKService : AuthService() {
         execute("callback", rc, "admin", { _, _, response ->
             val res = Mpesa.registerCallback(
                 JsonObject.of(
-                    "ShortCode", System.getenv("GB_MPESA_BUSINESS_NUMBER"),
+                    "ShortCode", "174379",
                     "ResponseType", "Complete",
-                    "ConfirmationURL", System.getenv("GB_MPESA_CALLBACK"),
-                    "ValidationURL", System.getenv("GB_MPESA_CALLBACK")
+                    "ConfirmationURL", "https://greenbay.com/callback",
+                    "ValidationURL", "https://greenbay.com/callback"
                 )
             )
             if (res.getString("ResponseDescription") == "success") {

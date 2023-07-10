@@ -22,7 +22,7 @@ open class GreenBayService(serverPort: Int) : STKService() {
         port = serverPort
     }
 
-    constructor() : this(Integer.valueOf(System.getenv("GB_PORT")))
+    constructor() : this (8080)
 
     override fun start(startPromise: Promise<Void>) {
         val vertx = this.getVertx()

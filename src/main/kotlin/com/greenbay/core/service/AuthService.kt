@@ -37,7 +37,7 @@ open class AuthService : TaskService() {
                     val jwt = generateAccessJwt(it.getString("email"))
                     val refresh = generateRefreshJwt(it.getString("email"))
                     val session = JsonObject.of("email", it.getString("email"), "refreshToken", refresh)
-                    findOne(Collections.SESSIONS.toString(), JsonObject.of("email", it.getString("email")), { req->
+                    findOne(Collections.SESSIONS.toString(), JsonObject.of("email", it.getString("email")), { req ->
                         if (req.isEmpty) {
                             save(Collections.SESSIONS.toString(), session, {
                                 response
@@ -54,9 +54,11 @@ open class AuthService : TaskService() {
                                 logger.error("login(${thr.cause}) <--")
                                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
                             })
-                        }else{
-                            findAndUpdate(Collections.SESSIONS.toString(),JsonObject.of("email",it.getString("email")),
-                                JsonObject.of("\$set",JsonObject.of("refreshToken",refresh)),{
+                        } else {
+                            findAndUpdate(Collections.SESSIONS.toString(),
+                                JsonObject.of("email", it.getString("email")),
+                                JsonObject.of("\$set", JsonObject.of("refreshToken", refresh)),
+                                {
                                     response
                                         .putHeader("access-token", jwt)
                                         .putHeader("refresh-token", refresh)
@@ -67,7 +69,8 @@ open class AuthService : TaskService() {
                                             JsonObject.of("accessToken", jwt, "refreshToken", refresh)
                                         )
                                     )
-                                },{tr->
+                                },
+                                { tr ->
                                     logger.error("login(${tr.cause}) <--")
                                     response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
                                 }
@@ -126,13 +129,8 @@ open class AuthService : TaskService() {
                     val address = rc.request().localAddress().hostAddress()
                     val port = rc.request().localAddress().port()
                     val htmlText =
-                        if (System.getenv("GB_ENVIRONMENT") == "development" || System.getenv("GB_ENVIRONMENT")
-                                .isNullOrEmpty()
-                        ) {
-                            "$scheme://$address:$port/code/$email/$code"
-                        } else {
-                            "${System.getenv("GB_HOST_URL")}/code/$email/$code"
-                        }
+                        "http://localhost:8080/code/$email/$code"
+
                     val htmlString = String.format("<a href=%s\">click Here</a>", htmlText)
                     val mailBody = "Click link to reset password."
                     sendEmail(email, "Password Reset", mailBody, htmlString, success = {

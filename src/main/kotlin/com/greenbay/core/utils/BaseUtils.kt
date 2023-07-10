@@ -29,20 +29,20 @@ open class BaseUtils : DatabaseUtils() {
      * Generates an access token with a 1-week expiry
      */
     fun generateAccessJwt(email: String): String {
-        return JWT.create().withSubject(email).withIssuer(System.getenv("GB_JWT_ISSUER"))
+        return JWT.create().withSubject(email).withIssuer("greenbay.com")
             .withExpiresAt(Date(System.currentTimeMillis() + (60 * 60 * 24 * 7 * 1000L)))
-            .withAudience(System.getenv("GB_JWT_ISSUER")).withIssuedAt(Date(System.currentTimeMillis()))
-            .sign(Algorithm.HMAC256(System.getenv("GB_JWT_SECRET")))
+            .withAudience("greenbay.com").withIssuedAt(Date(System.currentTimeMillis()))
+            .sign(Algorithm.HMAC256("werdtfyuhijhgfdsfghjkuytrewdfghj"))
     }
 
     /**
      * Generates a refresh token a week expiry
      */
     fun generateRefreshJwt(email: String): String {
-        return JWT.create().withSubject(email).withIssuer(System.getenv("GB_JWT_ISSUER"))
+        return JWT.create().withSubject(email).withIssuer("greenbay.com")
             .withExpiresAt(Date(System.currentTimeMillis() + (60 * 60 * 24 * 30 * 1000L)))
-            .withAudience(System.getenv("GB_JWT_ISSUER")).withIssuedAt(Date(System.currentTimeMillis()))
-            .sign(Algorithm.HMAC256(System.getenv("GB_JWT_SECRET")))
+            .withAudience("greenbay.com").withIssuedAt(Date(System.currentTimeMillis()))
+            .sign(Algorithm.HMAC256("werdtfyuhijhgfdsfghjkuytrewdfghj"))
     }
 
     /**
@@ -174,7 +174,7 @@ open class BaseUtils : DatabaseUtils() {
     ) {
         logger.info("verifyAccess($task) -->")
         val decodedJwt = JWT.decode(jwt)
-        val verifier = JWT.require(Algorithm.HMAC256(System.getenv("GB_JWT_SECRET")))
+        val verifier = JWT.require(Algorithm.HMAC256("werdtfyuhijhgfdsfghjkuytrewdfghj"))
             .withAudience("greenbay.com")
             .withIssuer("greenbay.com").build()
         val decodedToken = verifier.verify(decodedJwt)
@@ -253,17 +253,17 @@ open class BaseUtils : DatabaseUtils() {
         fail: (throwable: Throwable) -> Unit
     ) {
         val config = MailConfig().apply {
-            port = Integer.valueOf(System.getenv("GB_MAIL_PORT"))
-            hostname = System.getenv("GB_MAIL_HOST")
+            port = 465
+            hostname = "smtp.gmail.com"
             isSsl = true
             starttls = StartTLSOptions.REQUIRED
-            username = System.getenv("GB_MAIL_USERNAME")
-            password = System.getenv("GB_MAIL_PASSWORD")
+            username = "yellowdototp@gmail.com"
+            password = "lcptzernkfbqpnbb"
             login = LoginOption.XOAUTH2
         }
         val client = MailClient.createShared(vertx, config, "GB_MAIL_POOL")
         val message = MailMessage().apply {
-            from = "${System.getenv("GB_MAIL_ADDRESS")} (No reply)"
+            from = "yellowdototp@gmail.com (No reply)"
             to = listOf(email)
             subject = subjectText
             text = bodyText

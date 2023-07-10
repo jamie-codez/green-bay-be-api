@@ -4,10 +4,12 @@ package com.greenbay.core
 enum class Collections(private var value: String) {
     APP_USERS("app_user"),
     HOUSES("houses"),
+    CALL_BACKS("call_backs"),
     TENANTS("tenants"),
     PAYMENTS("payments"),
     SESSIONS("sessions"),
     RESET_CODES("reset_codes"),
+    ACTIVATION_CODES("activation_codes"),
     TASKS("TASKS"),
     COMMUNICATIONS("communications");
 
@@ -16,7 +18,7 @@ enum class Collections(private var value: String) {
     }
 }
 
-enum class TaskStatus(private var value: String){
+enum class TaskStatus(private var value: String) {
     COMPLETED("COMPLETED"),
     STARTED("STARTED"),
     PENDING("PENDING");

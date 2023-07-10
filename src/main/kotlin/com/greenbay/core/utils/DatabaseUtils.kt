@@ -147,7 +147,7 @@ open class DatabaseUtils : AbstractVerticle() {
             success(results)
         }.exceptionHandler {
             logger.error("Pipeline failed")
-            fail(Throwable("Error occurred"))
+            fail(it)
         }
     }
 }

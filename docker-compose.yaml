@@ -1,5 +1,21 @@
 version: "3.8"
 services:
+#  mongodb:
+#    container_name: mongodb
+#    image: bitnami/mongodb
+#    restart: always
+#    expose:
+#      - 27017
+#    ports:
+#      - "27017:27017"
+#    environment:
+#      - MONGODB_USERNAME=root
+#      - MONGODB_PASSWORD=admin
+#      - MONGODB_DATABASE=greenbay_db
+#      - MONGODB_ROOT_USERNAME=admin
+#      - MONGODB_ROOT_PASSWORD=password123
+
+
   green_bay_api:
     container_name: green_bay_api
     build: .
@@ -10,20 +26,22 @@ services:
       - "80:8001"
     env_file:
       - .env
-#    networks:
-#      - green_bay
-
+    networks:
+      - green_bay
 
 #  mongo_express:
 #    image: mongo-express
 #    restart: on-failure
+#    depends_on: [ mongo ]
 #    environment:
-#      - ME_CONFIG_MONGODB_SERVER=mongodb+srv://app1.bqmqa.mongodb.net/greenbay_db?retryWrites=true&w=majority
-#      - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
-#      - ME_CONFIG_MONGODB_ADMINUSERNAME=skunk
-#      - ME_CONFIG_MONGODB_ADMINPASSWORD=g0BJX2hfxH3W6T3q
-#      - ME_CONFIG_BASICAUTH_USERNAME=skunk
-#      - ME_CONFIG_BASICAUTH_PASSWORD=g0BJX2hfxH3W6T3q
+#      ME_CONFIG_MONGODB_SERVER: mongodb
+#      ME_CONFIG_MONGODB_ENABLE_ADMIN: true
+#      ME_CONFIG_MONGODB_PORT: 27017
+#      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+#      ME_CONFIG_MONGODB_ADMINPASSWORD: password123
+#      ME_CONFIG_BASICAUTH_USERNAME: root
+#      ME_CONFIG_BASICAUTH_PASSWORD: admin
+#      ME_CONFIG_MONGODB_URL: mongodb://admin:password123@mongodb:27017/
 #    expose:
 #      - 5001
 #    ports:
@@ -31,17 +49,12 @@ services:
 #    networks:
 #      - green_bay
 
-#volumes:
-#  mongo-data:
-#  mongo-config:
-#
-#networks:
-#  green_bay:
-#    driver: bridge
+volumes:
+  mongo-data:
+  mongo-config:
 
-
-
-
-
-
-
+networks:
+  default:
+    name: green_bay
+  green_bay:
+    driver: bridge

@@ -14,7 +14,7 @@ open class PaymentService : TenantService() {
 
     fun setPaymentRoutes(router: Router) {
         router.post("/payments").handler(::createPayment)
-        router.get("/payments/:pageNumber").handler(::getPayments)
+        router.get("/payments/:email/:pageNumber").handler(::getPayments)
         router.get("/payments/:term/:pageNumber").handler(::searchPayment)
         router.put("/payments/:referenceNumber").handler(::updatePayment)
         router.delete("/payments/:referenceNumber").handler(::deletePayment)
@@ -41,11 +41,11 @@ open class PaymentService : TenantService() {
 
     private fun getPayments(rc: RoutingContext) {
         logger.info("searchPayment() -->")
-        execute("searchPayment", rc, "user", { user, body, response ->
+        execute("searchPayment", rc, "user", { user, _, response ->
             val limit = 20
             val pageNumber = Integer.valueOf(rc.request().getParam("pageNumber")) - 1
             val skip = pageNumber * limit
-            val owner = body.getString("owner") ?: ""
+            val owner = rc.request().getParam("email") ?: ""
             val pipeline = JsonArray()
             if (owner == "mine") {
                 pipeline.add(JsonObject.of("\$match", JsonObject.of("from", user.getString("email"))))
@@ -79,7 +79,7 @@ open class PaymentService : TenantService() {
                 )
                 .add(JsonObject.of("\$skip", skip))
                 .add(JsonObject.of("\$limit", limit))
-                .add(JsonObject.of("\$sort",JsonObject.of("_id",-1)))
+                .add(JsonObject.of("\$sort", JsonObject.of("_id", -1)))
             aggregate(Collections.PAYMENTS.toString(), pipeline, {
                 val paging = JsonObject.of("page", pageNumber, "sorted", true)
                 response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
@@ -87,7 +87,7 @@ open class PaymentService : TenantService() {
                 logger.error("getPayments(${it.message} -> ${it.cause})")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
-        }, "owner")
+        })
         logger.info("getPayments() <--")
     }
 
@@ -102,7 +102,7 @@ open class PaymentService : TenantService() {
                 response.end(getResponse(BAD_REQUEST.code(), "Expected search term"))
                 return@execute
             }
-            val query = JsonObject.of("\$firstName", JsonObject.of("\$regex", term,"\$options","i"))
+            val query = JsonObject.of("\$firstName", JsonObject.of("\$regex", term, "\$options", "i"))
             val pipeline = JsonArray()
                 .add(JsonObject.of("\$match", query))
                 .add(
@@ -231,7 +231,6 @@ open class PaymentService : TenantService() {
 //        "ConfirmationURL": "https://mydomain.com/confirmation",
 //        "ValidationURL": "https://mydomain.com/validation",
 //    }
-
 
 
 }

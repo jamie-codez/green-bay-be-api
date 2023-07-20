@@ -2,6 +2,7 @@ package com.greenbay.core.utils
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import com.auth0.jwt.exceptions.TokenExpiredException
 import com.greenbay.core.Collections
 import io.netty.handler.codec.http.HttpResponseStatus.*
 import io.vertx.core.http.HttpServerResponse
@@ -177,33 +178,42 @@ open class BaseUtils : DatabaseUtils() {
         val verifier = JWT.require(Algorithm.HMAC256(System.getenv("GB_JWT_SECRET")))
             .withAudience("greenbay.com")
             .withIssuer("greenbay.com").build()
-        val decodedToken = verifier.verify(decodedJwt)
-        val subject = decodedToken.subject
-        val expiresAt = decodedToken.expiresAt
-        val issuer = decodedToken.issuer
         val res = response.apply {
             statusCode = OK.code()
             statusMessage = OK.reasonPhrase()
         }.putHeader("content-type", "application/json")
-        if (Date(System.currentTimeMillis()) > expiresAt) {
-            res.end(getResponse(UNAUTHORIZED.code(), "Token expired"))
-            return
-        }
-        if (issuer != "greenbay.com") {
-            res.end(getResponse(BAD_REQUEST.code(), "Seems you are lost"))
-            return
-        }
-        if (subject.isNullOrEmpty()) {
-            res.end(getResponse(BAD_REQUEST.code(), "Invalid JWT"))
-            return
-        }
-        getUser(subject, {
-            if (hasRole(it.getJsonObject("roles"), role)) {
-                inject(it)
-            } else {
-                response.end(getResponse(UNAUTHORIZED.code(), "Not enough permissions"))
+        try {
+            val decodedToken = verifier.verify(decodedJwt)
+            val subject = decodedToken.subject
+            val expiresAt = decodedToken.expiresAt
+            val issuer = decodedToken.issuer
+            expiresAt.time
+            if (System.currentTimeMillis() > expiresAt.time) {
+                res.end(getResponse(UNAUTHORIZED.code(), "Token expired"))
+                return
             }
-        }, res)
+            if (issuer != "greenbay.com") {
+                res.end(getResponse(BAD_REQUEST.code(), "Seems you are lost"))
+                return
+            }
+            if (subject.isNullOrEmpty()) {
+                res.end(getResponse(BAD_REQUEST.code(), "Invalid JWT"))
+                return
+            }
+            getUser(subject, {
+                if (hasRole(it.getJsonObject("roles"), role)) {
+                    inject(it)
+                } else {
+                    response.end(getResponse(UNAUTHORIZED.code(), "Not enough permissions"))
+                }
+            }, res)
+        } catch (ex: Exception) {
+            if (ex is TokenExpiredException) {
+                res.end(getResponse(453, "Token expired"))
+                return
+            }
+            res.end(getResponse(UNAUTHORIZED.code(), "${ex.message}"))
+        }
         logger.info("verifyAccess($task) <--")
     }
 

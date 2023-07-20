@@ -20,10 +20,10 @@ open class UserService : BaseUtils() {
         router.post("/users").handler(::createUser)
         router.post("/users/admin").handler(::createAdmin)
         router.get("/users/:pageNumber").handler(::getUsers)
-        router.get("/user/activate/:email/code").handler(::activateEmail)
+        router.get("/user/activate/:email/:code").handler(::activateEmail)
         router.get("/users/search/:term/:pageNumber").handler(::searchUser)
-        router.put("/users/:email").handler(::updateUser)
-        router.delete("/users/:email").handler(::deleteUser)
+        router.put("/users/:id").handler(::updateUser)
+        router.delete("/users/:id").handler(::deleteUser)
     }
 
     private fun createUser(rc: RoutingContext) {
@@ -36,7 +36,7 @@ open class UserService : BaseUtils() {
                     body.put("addedBy", user.getString("email"))
                         .put("verified", false)
                         .put("roles", JsonObject.of("user", true))
-                        .put("addedOn", Date(System.currentTimeMillis()))
+                        .put("addedOn", System.currentTimeMillis())
                     val encodedPassword = BCryptPasswordEncoder().encode(body.getString("password"))
                     body.remove("password")
                     body.put("password", encodedPassword)
@@ -53,12 +53,12 @@ open class UserService : BaseUtils() {
                             )
                         })
                     }, { error ->
-                        logger.error("createUser(${error.cause}) <--")
+                        logger.error("createUser(${error.message}) <--", error)
                         response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
                     })
                 }
             }, {
-                logger.error("createUser(${it.cause}) <--")
+                logger.error("createUser(${it.message}) <--", it)
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
         }, "username", "email", "phone", "idNumber", "password", "profileImage")
@@ -144,6 +144,7 @@ open class UserService : BaseUtils() {
                     body.put("addedBy", body.getString("email"))
                         .put("roles", JsonObject.of("user", true, "admin", true, "manager", true))
                         .put("addedOn", System.currentTimeMillis())
+                        .put("verified", true)
                     val encodedPassword = BCryptPasswordEncoder().encode(body.getString("password"))
                     body.remove("password")
                     body.put("password", encodedPassword)
@@ -239,11 +240,11 @@ open class UserService : BaseUtils() {
     private fun updateUser(rc: RoutingContext) {
         logger.info("updateUser() -->")
         execute("updateUser", rc, "user", { user, body, response ->
-            val email = rc.request().getParam("email")
+            val id = rc.request().getParam("id")
             if (hasValues(body, "roles") && !hasRole(user.getJsonObject("roles"), "admin")) {
-                response.end(getResponse(UNAUTHORIZED.code(), "You dont have permission for this task"))
+                response.end(getResponse(UNAUTHORIZED.code(), "You don't have permission for this task"))
             }
-            findAndUpdate(Collections.APP_USERS.toString(), JsonObject.of("email", email), body, {
+            findAndUpdate(Collections.APP_USERS.toString(), JsonObject.of("_id", id), body, {
                 response.end(getResponse(OK.code(), "Successfully updated user", it))
             }, {
                 logger.error("updateUser(${it.message}) <--", it)
@@ -256,12 +257,12 @@ open class UserService : BaseUtils() {
     private fun deleteUser(rc: RoutingContext) {
         logger.info("deleteUser() -->")
         execute("deleteUser", rc, "user", { _, _, response ->
-            val email = rc.request().getParam("email")
-            if (email.isNullOrEmpty()) {
+            val id = rc.request().getParam("id")
+            if (id.isNullOrEmpty()) {
                 response.end(getResponse(BAD_REQUEST.code(), "Expected param email"))
                 return@execute
             }
-            val query = JsonObject.of("email", email)
+            val query = JsonObject.of("_id", id)
             findOne(Collections.APP_USERS.toString(), query, {
                 if (it.isEmpty) {
                     response.end(getResponse(NOT_FOUND.code(), "User not found"))
@@ -277,7 +278,6 @@ open class UserService : BaseUtils() {
                 logger.error("deleteUser(${it.message}) <--", it)
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error has occurred"))
             })
-            response.end(getResponse(OK.code(), "User Deleted successfully"))
         })
     }
 }

@@ -44,7 +44,7 @@ open class GreenBayService(serverPort: Int) : STKService() {
     protected open fun setRoutes(router: Router) {
         router.route().handler(BodyHandler.create())
         router.route().handler(
-            CorsHandler.create(".*.")
+            CorsHandler.create()
                 .allowedHeaders(
                     setOf(
                         "access-token",

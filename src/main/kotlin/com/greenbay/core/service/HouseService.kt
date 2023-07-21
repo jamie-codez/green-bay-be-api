@@ -15,6 +15,7 @@ open class HouseService : UserService() {
     fun setHouseRoutes(router: Router) {
         router.post("/houses").handler(::createHouse)
         router.get("/houses/:pageNumber").handler(::getHouses)
+        router.get("/houses/:id").handler(::getHouse)
         router.get("/houses/:term/:pageNumber").handler(::searchHouse)
         router.put("/houses/:houseNumber").handler(::updateHouse)
         router.delete("/houses/:houseNumber").handler(::deleteHouse)
@@ -46,6 +47,24 @@ open class HouseService : UserService() {
         logger.info("createHouse() <--")
     }
 
+    private fun getHouse(rc: RoutingContext) {
+        logger.info("getHouse() -->")
+        execute("getHouse", rc, "admin", { _, _, response ->
+            val id = rc.request().getParam("id")
+            if (id.isNullOrEmpty()) {
+                response.end(getResponse(BAD_REQUEST.code(), "Expected param id"))
+            } else {
+                findOne(Collections.HOUSES.toString(), JsonObject.of("_id", id), {
+                    response.end(getResponse(OK.code(), "Success", it))
+                }, {
+                    logger.error("getHouse(${it.cause} -> ${it.cause}) <--", it)
+                    response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
+                })
+            }
+        })
+        logger.info("getHouse() <--")
+    }
+
     private fun getHouses(rc: RoutingContext) {
         logger.info("getHouses() -->")
         execute("getHouses", rc, "admin", { _, _, response ->
@@ -55,7 +74,7 @@ open class HouseService : UserService() {
             val pipeline = JsonArray()
                 .add(JsonObject.of("\$skip", skip))
                 .add(JsonObject.of("\$limit", limit))
-                .add(JsonObject.of("\$sort", JsonObject.of("_id",-1)))
+                .add(JsonObject.of("\$sort", JsonObject.of("_id", -1)))
                 .add(
                     JsonObject.of(
                         "\$project",

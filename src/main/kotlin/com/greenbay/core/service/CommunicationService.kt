@@ -14,6 +14,7 @@ open class CommunicationService : PaymentService() {
     fun setCommunicationRoutes(router: Router) {
         router.post("/communications").handler(::createCommunication)
         router.get("/communications/:pageNumber").handler(::getCommunications)
+        router.get("/communications/:id").handler(::getCommunication)
         router.get("/communication/:term/:pageNumber").handler(::searchCommunication)
         router.put("/communications/:id").handler(::updateCommunication)
         router.delete("/communications/:id").handler(::deleteCommunication)
@@ -36,6 +37,24 @@ open class CommunicationService : PaymentService() {
             }, "to", "title", "description", "opened"
         )
         logger.info("createCommunication() <--")
+    }
+
+    private fun getCommunication(rc: RoutingContext) {
+        logger.info("getCommunication() -->")
+        execute("getCommunication", rc, "user", { _, _, response ->
+            val id = rc.request().getParam("id")
+            if (id.isNullOrEmpty()) {
+                response.end(getResponse(BAD_REQUEST.code(), "Expected param id"))
+                return@execute
+            }
+            findOne(Collections.COMMUNICATIONS.toString(), JsonObject.of("_id", id), {
+                response.end(getResponse(OK.code(), "Success", it))
+            }, {
+                logger.error("getCommunication(${it.message} -> ${it.cause}) <--",it)
+                response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
+            })
+        })
+        logger.info("getCommunication() <--")
     }
 
     private fun getCommunications(rc: RoutingContext) {

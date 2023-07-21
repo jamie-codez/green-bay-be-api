@@ -14,6 +14,7 @@ open class TenantService : HouseService() {
     fun setTenantRoutes(router: Router) {
         router.post("/tenants").handler(::createTenant)
         router.get("/tenants/:pageNumber").handler(::getTenants)
+        router.get("/tenants/:id").handler(::getTenant)
         router.get("/tenants/:term/pageNumber").handler(::searchTenant)
         router.put("/tenants/:client").handler(::updateTenant)
         router.delete("/tenants/:client").handler(::deleteTenant)
@@ -54,6 +55,49 @@ open class TenantService : HouseService() {
                 })
         }, "client", "houseNumber")
         logger.info("createTenant() <--")
+    }
+
+    private fun getTenant(rc: RoutingContext) {
+        logger.info("getTenant() -->")
+        execute("getTenant", rc, "user", { user, body, response ->
+            val id = rc.request().getParam("id")
+            if (id.isNullOrEmpty()) {
+                response.end(getResponse(BAD_REQUEST.code(), "Expected parameter id"))
+                return@execute
+            }
+            val query = JsonObject.of("_id", id)
+            findOne(Collections.TENANTS.toString(), query, {
+                findOne(Collections.APP_USERS.toString(), JsonObject.of("email", it.getString("client")), { client ->
+                    findOne(
+                        Collections.HOUSES.toString(),
+                        JsonObject.of("houseNumber", it.getString("houseNumber")),
+                        { house ->
+                            val tenant = JsonObject.of(
+                                "firstName", client.getString("firstName"),
+                                "lastName", client.getString("lastName"),
+                                "email", client.getString("email"),
+                                "phone", client.getString("phoneNumber"),
+                                "houseNumber", house.getString("houseNumber"),
+                                "rent", house.getString("rent"),
+                                "deposit", house.getString("deposit"),
+                                "floorNumber", house.getString("floorNumber")
+                            )
+                            response.end(getResponse(OK.code(), "Success", tenant))
+                        },
+                        {
+                            logger.error("getTenant(${it.cause}) <--")
+                            response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
+                        })
+                }, {
+                    logger.error("getTenant(${it.cause}) <--")
+                    response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
+                })
+            }, {
+                logger.error("getTenant(${it.cause}) <--")
+                response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
+            })
+        })
+        logger.info("getTenant() <--")
     }
 
     private fun getTenants(rc: RoutingContext) {
@@ -121,7 +165,7 @@ open class TenantService : HouseService() {
                 )
                 .add(JsonObject.of("\$skip", skip))
                 .add(JsonObject.of("\$limit", limit))
-                .add(JsonObject.of("\$sort", JsonObject.of("_id",-1)))
+                .add(JsonObject.of("\$sort", JsonObject.of("_id", -1)))
             aggregate(Collections.TENANTS.toString(), pipeline, {
                 val paging = JsonObject.of("page", pageNumber, "sorted", false)
                 response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))

@@ -30,11 +30,10 @@ repositories {
 }
 
 dependencies {
-    implementation(platform("io.vertx:vertx-core:4.3.7"))
+    implementation(platform("io.vertx:vertx-core:4.4.4"))
     implementation("io.vertx:vertx-web")
     implementation("io.vertx:vertx-mongo-client")
     implementation("io.vertx:vertx-mail-client")
-    implementation("io.vertx:vertx-lang-kotlin-coroutines")
     implementation("io.vertx:vertx-health-check")
     implementation("com.auth0:java-jwt:4.2.2")
     implementation("org.slf4j:slf4j-api:2.0.7")

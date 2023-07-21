@@ -15,6 +15,7 @@ open class TaskService : CommunicationService() {
     fun setTaskRoutes(router: Router) {
         router.post("/tasks").handler(::createTask)
         router.get("/tasks/:pageNumber").handler(::getTasks)
+        router.get("/tasks/:id").handler(::getTask)
         router.get("/tasks/:term/:pageNumber").handler(::searchTask)
         router.put("/tasks/:id").handler(::updateTask)
         router.delete("/tasks/:id").handler(::deleteTask)
@@ -35,6 +36,29 @@ open class TaskService : CommunicationService() {
             })
         }, "to", "title", "description", "scheduleDate")
         logger.info("createTask() <--")
+    }
+
+    private fun getTask(rc: RoutingContext){
+        logger.info("getTask() -->")
+        execute("getTask", rc, "user", { _, _, response ->
+            val id = rc.request().getParam("id") ?: ""
+            if (id.isEmpty()) {
+                response.end(getResponse(BAD_REQUEST.code(), "Expected parameter id"))
+                return@execute
+            }
+            val query = JsonObject.of("_id", id)
+            findOne(Collections.TASKS.toString(), query, {
+                if (it.isEmpty) {
+                    response.end(getResponse(NOT_FOUND.code(), "Task not found"))
+                    return@findOne
+                }
+                response.end(getResponse(OK.code(), "Success", it))
+            }, {
+                logger.error("getTask(${it.cause}) <--")
+                response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred"))
+            })
+        })
+        logger.info("getTask() <--")
     }
 
     private fun getTasks(rc: RoutingContext) {

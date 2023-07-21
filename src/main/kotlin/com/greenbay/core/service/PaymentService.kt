@@ -15,6 +15,7 @@ open class PaymentService : TenantService() {
     fun setPaymentRoutes(router: Router) {
         router.post("/payments").handler(::createPayment)
         router.get("/payments/:email/:pageNumber").handler(::getPayments)
+        router.get("/payments/:id").handler(::getPayment)
         router.get("/payments/:term/:pageNumber").handler(::searchPayment)
         router.put("/payments/:referenceNumber").handler(::updatePayment)
         router.delete("/payments/:referenceNumber").handler(::deletePayment)
@@ -37,6 +38,25 @@ open class PaymentService : TenantService() {
             })
         }, "title", "description", "transactionCode", "amount")
         logger.info("createPayment() <--")
+    }
+
+    private fun getPayment(rc: RoutingContext) {
+        logger.info("getPayment() -->")
+        execute("getPayment", rc, "user", { _, _, response ->
+            val id = rc.request().getParam("id")
+            if (id.isNullOrEmpty()) {
+                response.end(getResponse(BAD_REQUEST.code(), "Expected parameter id"))
+                return@execute
+            }
+            val query = JsonObject.of("_id", id)
+            findOne(Collections.PAYMENTS.toString(), query, {
+                response.end(getResponse(OK.code(), "Success", it))
+            }, {
+                logger.error("getPayment(${it.message} <--)",it)
+                response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
+            })
+        })
+        logger.info("getPayment() <--")
     }
 
     private fun getPayments(rc: RoutingContext) {
@@ -162,6 +182,7 @@ open class PaymentService : TenantService() {
             findAndUpdate(Collections.PAYMENTS.toString(), query, body, {
                 response.end(getResponse(OK.code(), "Payment updated successfully", it))
             }, {
+                logger.error("updatePayment(${it.message} -> ${it.cause}) <--",it)
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
         }, "from", "transactionCode")

@@ -20,6 +20,7 @@ open class UserService : BaseUtils() {
         router.post("/users").handler(::createUser)
         router.post("/users/admin").handler(::createAdmin)
         router.get("/users/:pageNumber").handler(::getUsers)
+        router.get("/user/:id").handler(::getUser)
         router.get("/user/activate/:email/:code").handler(::activateEmail)
         router.get("/users/search/:term/:pageNumber").handler(::searchUser)
         router.put("/users/:id").handler(::updateUser)
@@ -199,6 +200,24 @@ open class UserService : BaseUtils() {
             })
         })
         logger.info("getUsers() <--")
+    }
+
+    private fun getUser(rc: RoutingContext) {
+        logger.info("getUser() -->")
+        execute("getUser", rc, "user", { _, _, response ->
+            val id = rc.request().getParam("id")
+            if (id.isNullOrEmpty()) {
+                response.end(getResponse(BAD_REQUEST.code(), "id cannot be null"))
+                return@execute
+            }
+            val query = JsonObject.of("_id", id)
+            findOne(Collections.APP_USERS.toString(), query, {
+                response.end(getResponse(OK.code(), "Successful", it))
+            }, {
+                response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "An error occurred try again"))
+            })
+        })
+        logger.info("getUser() <--")
     }
 
     private fun searchUser(rc: RoutingContext) {

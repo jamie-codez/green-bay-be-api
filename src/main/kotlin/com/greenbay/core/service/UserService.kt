@@ -74,7 +74,8 @@ open class UserService : BaseUtils() {
     ) {
         logger.info("sendVerificationEmail() -->")
         val verificationCode = JsonObject.of("owner", email, "code", code)
-        val htmlText = "${System.getenv("GB_HOST_URL")}/user/activate/$email/$code"
+        val host = System.getenv("GB_HOST_URL")?:"http://localhost"
+        val htmlText = "${host}/user/activate/$email/$code"
         val link = "Click <a href=\"$htmlText\">Here</a> to activate your account"
         save(Collections.ACTIVATION_CODES.toString(), verificationCode, {
             sendEmail(
@@ -210,6 +211,7 @@ open class UserService : BaseUtils() {
                 response.end(getResponse(BAD_REQUEST.code(), "id cannot be null"))
                 return@execute
             }
+            logger.info(id)
             val query = JsonObject.of("_id", id)
             findOne(Collections.APP_USERS.toString(), query, {
                 response.end(getResponse(OK.code(), "Successful", it))

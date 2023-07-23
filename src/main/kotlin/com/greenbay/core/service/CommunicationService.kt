@@ -34,8 +34,7 @@ open class CommunicationService : PaymentService() {
                     logger.error("createCommunication(${it.message} -> ${it.cause}) <--")
                     response.end(getResponse(BAD_REQUEST.code(), "Error occurred try again"))
                 })
-            }, "to", "title", "description", "opened"
-        )
+            }, "to","title", "description")
         logger.info("createCommunication() <--")
     }
 
@@ -157,7 +156,7 @@ open class CommunicationService : PaymentService() {
                 logger.error("updateCommunication(${it.message} -> ${it.cause}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
-        }, "to")
+        }, "to","payload")
         logger.info("updateCommunication() <--")
     }
 

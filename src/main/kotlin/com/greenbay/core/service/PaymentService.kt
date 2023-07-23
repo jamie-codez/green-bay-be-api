@@ -17,7 +17,7 @@ open class PaymentService : TenantService() {
         router.get("/payments/:email/:pageNumber").handler(::getPayments)
         router.get("/payments/:id").handler(::getPayment)
         router.get("/payments/:term/:pageNumber").handler(::searchPayment)
-        router.put("/payments/:referenceNumber").handler(::updatePayment)
+        router.put("/payments/:id").handler(::updatePayment)
         router.delete("/payments/:referenceNumber").handler(::deletePayment)
         router.delete("/payments/:referenceNumber/:email").handler(::deleteMyPayment)
         setTenantRoutes(router)
@@ -28,7 +28,7 @@ open class PaymentService : TenantService() {
         execute("createPayment", rc, "user", { user, body, response ->
             body
                 .put("from", user.getString("email"))
-                .put("dateCreated", Date(System.currentTimeMillis()))
+                .put("dateCreated", System.currentTimeMillis())
                 .put("verified", false)
             save(Collections.PAYMENTS.toString(), body, {
                 response.end(getResponse(OK.code(), "Payment recorded successfully"))
@@ -168,24 +168,26 @@ open class PaymentService : TenantService() {
     private fun updatePayment(rc: RoutingContext) {
         logger.info("updatePayment() -->")
         execute("updatePayment", rc, "user", { user, body, response ->
+            val id = rc.request().getParam("id")
             if (body.getString("from") != user.getString("email")) {
                 response.end(getResponse(BAD_REQUEST.code(), "Task not authorized"))
                 return@execute
             }
             val query = JsonObject
                 .of(
+                    "_id", id,
                     "from", body.getString("from"),
                     "transactionCode", body.getString("transactionCode")
                 )
             body.remove("amount")
             body.remove("verified")
-            findAndUpdate(Collections.PAYMENTS.toString(), query, body, {
+            findAndUpdate(Collections.PAYMENTS.toString(), query, body.getJsonObject("payload"), {
                 response.end(getResponse(OK.code(), "Payment updated successfully", it))
             }, {
                 logger.error("updatePayment(${it.message} -> ${it.cause}) <--",it)
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
-        }, "from", "transactionCode")
+        }, "from", "transactionCode","payload")
         logger.info("updatePayment() <--")
     }
 

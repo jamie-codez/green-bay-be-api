@@ -26,7 +26,7 @@ open class TaskService : CommunicationService() {
         logger.info("createTask() -->")
         execute("createTask", rc, "admin", { user, body, response ->
             body.put("createdBy", user.getString("email"))
-                .put("createdOn", Date(System.currentTimeMillis()))
+                .put("createdOn", System.currentTimeMillis())
                 .put("status", TaskStatus.PENDING.toString())
             save(Collections.TASKS.toString(), body, {
                 response.end(getResponse(CREATED.code(), "Task created successfully"))
@@ -38,7 +38,7 @@ open class TaskService : CommunicationService() {
         logger.info("createTask() <--")
     }
 
-    private fun getTask(rc: RoutingContext){
+    private fun getTask(rc: RoutingContext) {
         logger.info("getTask() -->")
         execute("getTask", rc, "user", { _, _, response ->
             val id = rc.request().getParam("id") ?: ""
@@ -115,7 +115,7 @@ open class TaskService : CommunicationService() {
                 )
                 .add(JsonObject.of("\$skip", skip))
                 .add(JsonObject.of("\$limit", limit))
-                .add(JsonObject.of("\$sort",JsonObject.of("_id",-1)))
+                .add(JsonObject.of("\$sort", JsonObject.of("_id", -1)))
             aggregate(Collections.TASKS.toString(), pipeline, {
                 val paging = JsonObject.of("page", pageNumber, "sorted", true)
                 response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
@@ -207,16 +207,16 @@ open class TaskService : CommunicationService() {
                 response.end(getResponse(BAD_REQUEST.code(), "Expected parameter id"))
                 return@execute
             }
-            if (body.containsKey("status")){
-                val completed = body.getString("status")==TaskStatus.COMPLETED.toString()
-                val started = body.getString("status")==TaskStatus.STARTED.toString()
+            if (body.containsKey("status")) {
+                val completed = body.getString("status") == TaskStatus.COMPLETED.toString()
+                val started = body.getString("status") == TaskStatus.STARTED.toString()
                 body.remove("status")
                 if (completed)
-                    body.put("status",TaskStatus.STARTED.toString())
+                    body.put("status", TaskStatus.STARTED.toString())
                 else if (started)
-                    body.put("status",TaskStatus.STARTED.toString())
+                    body.put("status", TaskStatus.STARTED.toString())
                 else
-                    body.put("status",TaskStatus.PENDING.toString())
+                    body.put("status", TaskStatus.PENDING.toString())
             }
             val query = JsonObject.of("_id", id)
             findOne(Collections.TASKS.toString(), query, {

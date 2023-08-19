@@ -196,7 +196,7 @@ open class UserService : BaseUtils() {
                 val paging = JsonObject.of("page", pageNumber, "sorted", true)
                 response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
-                logger.error("getUsers(${it.cause}) <--", it)
+                logger.error("getUsers(${it.message}) <--", it)
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
         })
@@ -216,6 +216,7 @@ open class UserService : BaseUtils() {
             findOne(Collections.APP_USERS.toString(), query, {
                 response.end(getResponse(OK.code(), "Successful", it))
             }, {
+                logger.error("getUser(${it.message}) <--", it)
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "An error occurred try again"))
             })
         })

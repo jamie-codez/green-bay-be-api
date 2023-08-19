@@ -51,7 +51,7 @@ open class AuthService : TaskService() {
                                     )
                                 )
                             }, { thr ->
-                                logger.error("login(${thr.cause}) <--")
+                                logger.error("login(${thr.message}) <--")
                                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
                             })
                         }else{
@@ -68,7 +68,7 @@ open class AuthService : TaskService() {
                                         )
                                     )
                                 },{tr->
-                                    logger.error("login(${tr.cause}) <--")
+                                    logger.error("login(${tr.message}) <--")
                                     response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
                                 }
                             )
@@ -98,11 +98,11 @@ open class AuthService : TaskService() {
                 findOneAndDelete(Collections.SESSIONS.toString(), query, {
                     response.end(getResponse(OK.code(), "Logout successful"))
                 }, { thr ->
-                    logger.error("logout(${thr.cause}) <--")
+                    logger.error("logout(${thr.message}) <--")
                     response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
                 })
             }, {
-                logger.error("logout(${it.cause}) <--")
+                logger.error("logout(${it.message}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
         }, "email")
@@ -142,11 +142,11 @@ open class AuthService : TaskService() {
                         logger.error("sendPasswordResetEmail(${err.message}) <--", err)
                     })
                 }, { thr ->
-                    logger.info("sendPasswordResetEmail(${thr.cause}) <--")
+                    logger.info("sendPasswordResetEmail(${thr.message}) <--")
                     response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
                 })
             }, {
-                logger.info("sendPasswordResetEmail(${it.cause}) <--")
+                logger.info("sendPasswordResetEmail(${it.message}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
         }, "email")
@@ -177,19 +177,19 @@ open class AuthService : TaskService() {
                         findOneAndDelete(Collections.RESET_CODES.toString(), query, { re ->
                             logger.info("resetPassword(${re} delete successful) <--")
                         }, { err ->
-                            logger.error("resetPassword(${err.cause} delete code) <--")
+                            logger.error("resetPassword(${err.message} delete code) <--")
                         })
                         response.end(getResponse(OK.code(), "Password updated successfully"))
                     }, { thr ->
-                        logger.error("resetPassword(${thr.cause}) <--")
+                        logger.error("resetPassword(${thr.message}) <--")
                         response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
                     })
                 }, {
-                    logger.error("resetPassword(${it.cause}) <--")
+                    logger.error("resetPassword(${it.message}) <--")
                     response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
                 })
             }, {
-                logger.error("resetPassword(${it.cause}) <--")
+                logger.error("resetPassword(${it.message}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
         }, "email", "password")

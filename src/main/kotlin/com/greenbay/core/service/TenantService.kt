@@ -7,7 +7,6 @@ import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.RoutingContext
-import java.util.regex.Pattern
 
 open class TenantService : HouseService() {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
@@ -84,12 +83,12 @@ open class TenantService : HouseService() {
                             )
                             response.end(getResponse(OK.code(), "Success", tenant))
                         },
-                        {
-                            logger.error("getTenant(${it.cause}) <--")
+                        { error ->
+                            logger.error("getTenant(${error.message}) <--")
                             response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
                         })
-                }, {
-                    logger.error("getTenant(${it.cause}) <--")
+                }, { error ->
+                    logger.error("getTenant(${error.message}) <--")
                     response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
                 })
             }, {
@@ -170,7 +169,7 @@ open class TenantService : HouseService() {
                 val paging = JsonObject.of("page", pageNumber, "sorted", false)
                 response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
-                logger.error("getTenants(${it.cause}) <--")
+                logger.error("getTenants(${it.message}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
         })
@@ -261,7 +260,7 @@ open class TenantService : HouseService() {
                 val paging = JsonObject.of("page", pageNumber, "sorted", false)
                 response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
-                logger.error("searchTenants(${it.cause}) <--")
+                logger.error("searchTenants(${it.message}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
         })
@@ -279,7 +278,7 @@ open class TenantService : HouseService() {
             findAndUpdate(Collections.TENANTS.toString(), JsonObject.of("client", client), body, {
                 response.end(getResponse(OK.code(), "Successfully updated tenant"))
             }, {
-                logger.error("updateTenant(${it.cause}) <--")
+                logger.error("updateTenant(${it.message}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
         }, "client", "house")
@@ -297,7 +296,7 @@ open class TenantService : HouseService() {
             findOneAndDelete(Collections.TENANTS.toString(), JsonObject.of("client", client), {
                 response.end(getResponse(OK.code(), "Successfully deleted tenant"))
             }, {
-                logger.error("deleteTenant(${it.cause}) <--")
+                logger.error("deleteTenant(${it.message}) <--")
             })
         })
         logger.info("deleteTenant() <--")

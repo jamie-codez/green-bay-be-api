@@ -31,7 +31,7 @@ open class TaskService : CommunicationService() {
             save(Collections.TASKS.toString(), body, {
                 response.end(getResponse(CREATED.code(), "Task created successfully"))
             }, {
-                logger.error("createTask(${it.cause} -> creatingTask) <--")
+                logger.error("createTask(${it.message} -> creatingTask) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred"))
             })
         }, "to", "title", "description", "scheduleDate")
@@ -54,7 +54,7 @@ open class TaskService : CommunicationService() {
                 }
                 response.end(getResponse(OK.code(), "Success", it))
             }, {
-                logger.error("getTask(${it.cause}) <--")
+                logger.error("getTask(${it.message}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred"))
             })
         })
@@ -120,7 +120,7 @@ open class TaskService : CommunicationService() {
                 val paging = JsonObject.of("page", pageNumber, "sorted", true)
                 response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
-                logger.error("getTasks(${it.cause}) <--")
+                logger.error("getTasks(${it.message}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred "))
             })
         })
@@ -192,7 +192,7 @@ open class TaskService : CommunicationService() {
                 val paging = JsonObject.of("page", pageNumber, "sorted", false)
                 response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
-                logger.error("getTasks(${it.cause}) <--")
+                logger.error("getTasks(${it.message}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred "))
             })
         })
@@ -227,11 +227,11 @@ open class TaskService : CommunicationService() {
                 findAndUpdate(Collections.TASKS.toString(), query, body, {
                     response.end(getResponse(OK.code(), "Task updated successfully"))
                 }, { err ->
-                    logger.error("updateTask(${err.cause} -> updatingTask) <--")
+                    logger.error("updateTask(${err.message} -> updatingTask) <--")
                     response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred"))
                 })
             }, {
-                logger.error("updateTask(${it.cause}) <--")
+                logger.error("updateTask(${it.message}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred"))
             })
         })
@@ -255,11 +255,11 @@ open class TaskService : CommunicationService() {
                 findOneAndDelete(Collections.TASKS.toString(), query, {
                     response.end(getResponse(OK.code(), "Task deleted successfully"))
                 }, { err ->
-                    logger.error("deleteTask(${err.cause} -> deletingTask) <--")
+                    logger.error("deleteTask(${err.message} -> deletingTask) <--")
                     response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred"))
                 })
             }, {
-                logger.error("deleteTask(${it.cause}) <--")
+                logger.error("deleteTask(${it.message}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred"))
             })
         })

@@ -104,7 +104,7 @@ open class PaymentService : TenantService() {
                 val paging = JsonObject.of("page", pageNumber, "sorted", true)
                 response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
-                logger.error("getPayments(${it.message} -> ${it.cause})")
+                logger.error("getPayments(${it.message})")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
         })
@@ -158,7 +158,7 @@ open class PaymentService : TenantService() {
                 val paging = JsonObject.of("page", pageNumber, "sorted", false)
                 response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
-                logger.error("searchPayment(${it.message} -> ${it.cause})")
+                logger.error("searchPayment(${it.message})")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
         })
@@ -184,7 +184,7 @@ open class PaymentService : TenantService() {
             findAndUpdate(Collections.PAYMENTS.toString(), query, body.getJsonObject("payload"), {
                 response.end(getResponse(OK.code(), "Payment updated successfully", it))
             }, {
-                logger.error("updatePayment(${it.message} -> ${it.cause}) <--",it)
+                logger.error("updatePayment(${it.message}) <--",it)
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
         }, "from", "transactionCode","payload")
@@ -203,7 +203,7 @@ open class PaymentService : TenantService() {
             findOneAndDelete(Collections.PAYMENTS.toString(), query, {
                 response.end(getResponse(OK.code(), "Payment deleted successfully", it))
             }, {
-                logger.error("deletePayment(${it.message} -> ${it.cause}) <--")
+                logger.error("deletePayment(${it.message}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
         })
@@ -224,7 +224,7 @@ open class PaymentService : TenantService() {
                 findOneAndDelete(Collections.PAYMENTS.toString(), query, {
                     response.end(getResponse(OK.code(), "Payment deleted successfully", it))
                 }, {
-                    logger.error("deletePayment(${it.message} -> ${it.cause}) <--")
+                    logger.error("deletePayment(${it.message}) <--")
                     response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
                 })
             } else {
@@ -233,27 +233,5 @@ open class PaymentService : TenantService() {
         })
         logger.info("deletePayment() <--")
     }
-
-    //            {
-//                "BusinessShortCode": 174379,
-//                "Password": "MTc0Mzc5YmZiMjc5ZjlhYTliZGJjZjE1OGU5N2RkNzFhNDY3Y2QyZTBjODkzMDU5YjEwZjc4ZTZiNzJhZGExZWQyYzkxOTIwMjMwMzE3MDAwMzM0",
-//                "Timestamp": "20230317000334",
-//                "TransactionType": "CustomerPayBillOnline",
-//                "Amount": 1,
-//                "PartyA": 254708374149,
-//                "PartyB": 174379,
-//                "PhoneNumber": 254708374149,
-//                "CallBackURL": "https://mydomain.com/path",
-//                "AccountReference": "CompanyXLTD",
-//                "TransactionDesc": "Payment of X"
-//            }
-
-//    {
-//        "ShortCode": 600989,
-//        "ResponseType": "Completed",
-//        "ConfirmationURL": "https://mydomain.com/confirmation",
-//        "ValidationURL": "https://mydomain.com/validation",
-//    }
-
 
 }

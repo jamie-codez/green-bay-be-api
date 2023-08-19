@@ -49,7 +49,7 @@ open class CommunicationService : PaymentService() {
             findOne(Collections.COMMUNICATIONS.toString(), JsonObject.of("_id", id), {
                 response.end(getResponse(OK.code(), "Success", it))
             }, {
-                logger.error("getCommunication(${it.message} -> ${it.cause}) <--",it)
+                logger.error("getCommunication(${it.message}) <--",it)
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
         })
@@ -88,7 +88,7 @@ open class CommunicationService : PaymentService() {
                 val paging = JsonObject.of("page", pageNumber, "sorted", false)
                 response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
-                logger.error("getCommunications(${it.message} -> ${it.cause}) <--")
+                logger.error("getCommunications(${it.message}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
         })
@@ -133,7 +133,7 @@ open class CommunicationService : PaymentService() {
                 val paging = JsonObject.of("page", pageNumber, "sorted", false)
                 response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
-                logger.error("searchCommunication(${it.message} -> ${it.cause}) <--")
+                logger.error("searchCommunication(${it.message}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
         })
@@ -153,7 +153,7 @@ open class CommunicationService : PaymentService() {
             findAndUpdate(Collections.COMMUNICATIONS.toString(), query, update, {
                 response.end(getResponse(OK.code(), "Successful", it))
             }, {
-                logger.error("updateCommunication(${it.message} -> ${it.cause}) <--")
+                logger.error("updateCommunication(${it.message}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
         }, "to","payload")
@@ -172,7 +172,7 @@ open class CommunicationService : PaymentService() {
             findOneAndDelete(Collections.COMMUNICATIONS.toString(), query, {
                 response.end(getResponse(OK.code(), "Successfully deleted communication"))
             }, {
-                logger.error("deleteCommunication(${it.message} -> ${it.cause}) <--")
+                logger.error("deleteCommunication(${it.message}) <--")
                 response.end(getResponse(BAD_REQUEST.code(), "Error occurred try again"))
             })
         })

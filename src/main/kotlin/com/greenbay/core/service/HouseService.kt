@@ -31,7 +31,7 @@ open class HouseService : UserService() {
                     return@findOne
                 }
                 body.put("addedBy", user.getString("email"))
-                body.put("createdOn", Date(System.currentTimeMillis()))
+                body.put("createdOn", System.currentTimeMillis())
                 body.put("occupied", false)
                 save(Collections.HOUSES.toString(), body, {
                     response.end(getResponse(CREATED.code(), "Houses created successfully"))

@@ -27,7 +27,7 @@ open class CommunicationService : PaymentService() {
             "createCommunication", rc, "user", { user, body, response ->
                 body.put("id", UUID.randomUUID().toString())
                     .put("createdBy", user.getString("email"))
-                    .put("dateCreated", Date(System.currentTimeMillis()))
+                    .put("dateCreated", System.currentTimeMillis())
                 save(Collections.COMMUNICATIONS.toString(), body, {
                     response.end(getResponse(CREATED.code(), "Communication created successfully"))
                 }, {

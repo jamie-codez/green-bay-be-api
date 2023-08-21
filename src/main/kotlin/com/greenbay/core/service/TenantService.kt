@@ -35,7 +35,12 @@ open class TenantService : HouseService() {
                         Collections.HOUSES.toString(),
                         JsonObject.of("houseNumber", body.getString("houseNumber")),
                         { house ->
-                            val tenant = JsonObject.of("user", client, "house", house)
+                            val tenant = JsonObject.of(
+                                "user", client,
+                                "house", house,
+                                "createdOn", System.currentTimeMillis(),
+                                "createdBy", user.getString("email")
+                            )
                             save(Collections.TENANTS.toString(), tenant, {
                                 response.end(getResponse(CREATED.code(), "Tenant created successfully"))
                             }, { error ->

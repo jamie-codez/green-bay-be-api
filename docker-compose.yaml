@@ -37,13 +37,13 @@ services:
     restart: on-failure
     depends_on: [ mongodb ]
     environment:
-#      ME_CONFIG_MONGODB_SERVER: mongodb
-#      ME_CONFIG_MONGODB_ENABLE_ADMIN: true
-#      ME_CONFIG_MONGODB_PORT: 27017
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: true
+      ME_CONFIG_MONGODB_PORT: 27017
       ME_CONFIG_MONGODB_ADMINUSERNAME: admin
       ME_CONFIG_MONGODB_ADMINPASSWORD: password123
-#      ME_CONFIG_BASICAUTH_USERNAME: root
-#      ME_CONFIG_BASICAUTH_PASSWORD: admin
+      ME_CONFIG_BASICAUTH_USERNAME: root
+      ME_CONFIG_BASICAUTH_PASSWORD: admin
       ME_CONFIG_MONGODB_URL: mongodb://admin:password123@mongodb:27017/
     expose:
       - 5001

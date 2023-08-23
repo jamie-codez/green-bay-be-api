@@ -101,8 +101,13 @@ open class PaymentService : TenantService() {
                 .add(JsonObject.of("\$limit", limit))
                 .add(JsonObject.of("\$sort", JsonObject.of("_id", -1)))
             aggregate(Collections.PAYMENTS.toString(), pipeline, {
+                var data = arrayListOf<JsonObject?>()
+                if (it.isNotEmpty()){
+                    data = it
+                }
                 val paging = JsonObject.of("page", pageNumber, "sorted", true)
-                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
+                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", data
+                    , "pagination", paging)))
             }, {
                 logger.error("getPayments(${it.message})")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))

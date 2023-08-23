@@ -130,8 +130,12 @@ open class CommunicationService : PaymentService() {
                 .add(JsonObject.of("\$limit", limit))
                 .add(JsonObject.of("\$skip", skip))
             aggregate(Collections.COMMUNICATIONS.toString(), pipeline, {
+                var communications = arrayListOf<JsonObject?>()
+                if (it.isNotEmpty()){
+                    communications = it
+                }
                 val paging = JsonObject.of("page", pageNumber, "sorted", false)
-                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
+                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", communications, "pagination", paging)))
             }, {
                 logger.error("searchCommunication(${it.message}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))

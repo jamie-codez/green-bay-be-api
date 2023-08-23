@@ -117,8 +117,12 @@ open class TaskService : CommunicationService() {
                 .add(JsonObject.of("\$limit", limit))
                 .add(JsonObject.of("\$sort", JsonObject.of("_id", -1)))
             aggregate(Collections.TASKS.toString(), pipeline, {
+                var tasks = arrayListOf<JsonObject?>()
+                if (it.isNotEmpty()){
+                    tasks = it
+                }
                 val paging = JsonObject.of("page", pageNumber, "sorted", true)
-                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
+                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", tasks, "pagination", paging)))
             }, {
                 logger.error("getTasks(${it.message}) <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred "))

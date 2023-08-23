@@ -36,11 +36,11 @@ open class HouseService : UserService() {
                 save(Collections.HOUSES.toString(), body, {
                     response.end(getResponse(CREATED.code(), "Houses created successfully"))
                 }, { error ->
-                    logger.error("createHouse(${error.message} adding) <--")
+                    logger.error("createHouse(${error.message} adding) -> saveHouse <--")
                     response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
                 })
             }, {
-                logger.error("createHouse(${it.message} checking) <--")
+                logger.error("createHouse(${it.message} checking) -> getHouse <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
         }, "houseNumber", "rent", "deposit", "floorNumber")
@@ -57,7 +57,7 @@ open class HouseService : UserService() {
                 findOne(Collections.HOUSES.toString(), JsonObject.of("_id", id), {
                     response.end(getResponse(OK.code(), "Success", it))
                 }, {
-                    logger.error("getHouse(${it.message} -> ${it.cause}) <--", it)
+                    logger.error("getHouse(${it.message}) -> fetchingHouses <--", it)
                     response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
                 })
             }
@@ -93,7 +93,7 @@ open class HouseService : UserService() {
                 val paging = JsonObject.of("page", pageNumber, "sorted", true)
                 response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
             }, {
-                logger.error("getHouses(${it.message}) <--")
+                logger.error("getHouses(${it.message}) -> getHousePipeline <--")
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
             })
         })
@@ -136,7 +136,7 @@ open class HouseService : UserService() {
                     val paging = JsonObject.of("page", pageNumber, "sorted", true)
                     response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
                 }, {
-                    logger.error("searchHouse(${it.cause}) <--")
+                    logger.error("searchHouse(${it.message}) -> performingSearch <--")
                     response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
                 })
             }, {
@@ -157,7 +157,7 @@ open class HouseService : UserService() {
                 findAndUpdate(Collections.HOUSES.toString(), JsonObject.of("houseNumber", houseNumber), body, {
                     response.end(getResponse(OK.code(), "House updated successfully", it))
                 }, {
-                    logger.error("updateHouse(${it.message}) <--")
+                    logger.error("updateHouse(${it.message}) -> updatingHouse <--")
                     response.end(getResponse(BAD_REQUEST.code(), "Error occurred try again"))
                 })
             }
@@ -176,7 +176,7 @@ open class HouseService : UserService() {
                 findOneAndDelete(Collections.HOUSES.toString(), JsonObject.of("houseNumber", houseNumber), {
                     response.end(getResponse(OK.code(), "Deleted house successfully"))
                 }, {
-                    logger.error("deleteHouse(${it.message}) <--")
+                    logger.error("deleteHouse(${it.message}) -> deletingHouse <--")
                     response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
                 })
             }

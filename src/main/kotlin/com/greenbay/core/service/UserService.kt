@@ -193,8 +193,12 @@ open class UserService : BaseUtils() {
                     )
                 )
             aggregate(Collections.APP_USERS.toString(), pipeline, {
+                var users = arrayListOf<JsonObject?>()
+                if (it.isNotEmpty()){
+                    users = it
+                }
                 val paging = JsonObject.of("page", pageNumber, "sorted", true)
-                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", it, "pagination", paging)))
+                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", users, "pagination", paging)))
             }, {
                 logger.error("getUsers(${it.message}) <--", it)
                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))

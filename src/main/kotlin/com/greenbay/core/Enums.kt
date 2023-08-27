@@ -10,7 +10,7 @@ enum class Collections(private var value: String) {
     SESSIONS("sessions"),
     RESET_CODES("reset_codes"),
     ACTIVATION_CODES("activation_codes"),
-    TASKS("TASKS"),
+    TASKS("tasks"),
     COMMUNICATIONS("communications");
 
     override fun toString(): String {

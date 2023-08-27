@@ -40,6 +40,7 @@ open class TenantService : HouseService() {
                                 "house", house.getString("_id"),
                                 "createdOn", System.currentTimeMillis(),
                                 "createdBy", user.getString("email")
+                                "active", true
                             )
                             save(Collections.TENANTS.toString(), tenant, {
                                 findAndUpdate(Collections.HOUSES.toString(), JsonObject.of("_id", house.getString("_id")), JsonObject.of("\$set", JsonObject.of("occupied",true)), {

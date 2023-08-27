@@ -72,7 +72,7 @@ open class TaskService : CommunicationService() {
                     JsonObject.of(
                         "\$lookup", JsonObject
                             .of(
-                                "from", "app_users",
+                                "from", "app_user",
                                 "localField", "to",
                                 "foreignField", "email",
                                 "as", "client"
@@ -82,7 +82,7 @@ open class TaskService : CommunicationService() {
                 .add(
                     JsonObject.of(
                         "\$lookup", JsonObject.of(
-                            "from", "app_users",
+                            "from", "app_user",
                             "localField", "createdBy",
                             "foreignField", "email",
                             "as", "createdBy"
@@ -108,9 +108,16 @@ open class TaskService : CommunicationService() {
                                 "_id", "\$id",
                                 "clientFirstName", "\$client.firstName",
                                 "clientLastName", "\$client.lastName",
-                                "clientPhoneNumber", "\$client.phoneNumber",
+                                "clientPhoneNumber", "\$client.phone",
                                 "clientEmail", "\$client.email",
-                            )
+                                "createdByFirstName", "\$createdBy.firstName",
+                                "createdByLastName", "\$createdBy.lastName")
+                                .put("createdByEmail", "\$createdBy.email")
+                                .put("title","\$title")
+                                .put("description","\$description")
+                                .put("scheduleDate","\$scheduleDate")
+                                .put("status","\$status")
+                                .put("createdOn","\$createdOn")
                     )
                 )
                 .add(JsonObject.of("\$skip", skip))

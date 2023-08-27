@@ -27,7 +27,7 @@ open class TenantService : HouseService() {
                 Collections.APP_USERS.toString(),
                 JsonObject.of("email", body.getString("client")),
                 { client ->
-                    if (user.isEmpty) {
+                    if (client.isEmpty) {
                         response.end(getResponse(NOT_FOUND.code(), "User does not exist"))
                         return@findOne
                     }
@@ -36,13 +36,19 @@ open class TenantService : HouseService() {
                         JsonObject.of("houseNumber", body.getString("houseNumber")),
                         { house ->
                             val tenant = JsonObject.of(
-                                "user", client,
-                                "house", house,
+                                "user", client.getString("_id"),
+                                "house", house.getString("_id"),
                                 "createdOn", System.currentTimeMillis(),
                                 "createdBy", user.getString("email")
                             )
                             save(Collections.TENANTS.toString(), tenant, {
-                                response.end(getResponse(CREATED.code(), "Tenant created successfully"))
+                                findAndUpdate(Collections.HOUSES.toString(), JsonObject.of("_id", house.getString("_id")), JsonObject.of("\$set", JsonObject.of("occupied",true)), {
+                                    logger.info("createTenant() <--")
+                                    response.end(getResponse(CREATED.code(), "Tenant created successfully"))
+                                }, { error ->
+                                    logger.error("createTenant(${error.message}) <--")
+                                    response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
+                                })
                             }, { error ->
                                 logger.error("createTenant(${error.message}) <--")
                                 response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
@@ -115,9 +121,9 @@ open class TenantService : HouseService() {
                     JsonObject.of(
                         "\$lookup", JsonObject
                             .of(
-                                "from", "app_users",
-                                "localField", "client",
-                                "foreignField", "email",
+                                "from", "app_user",
+                                "localField", "user",
+                                "foreignField", "_id",
                                 "as", "user"
                             )
                     )
@@ -127,8 +133,8 @@ open class TenantService : HouseService() {
                         "\$lookup", JsonObject
                             .of(
                                 "from", "houses",
-                                "localField", "houseNumber",
-                                "foreignField", "houseNumber",
+                                "localField", "house",
+                                "foreignField", "_id",
                                 "as", "house"
                             )
                     )

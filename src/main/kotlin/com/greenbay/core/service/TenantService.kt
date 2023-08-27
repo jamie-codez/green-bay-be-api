@@ -290,7 +290,7 @@ open class TenantService : HouseService() {
                 response.end(getResponse(BAD_REQUEST.code(), "Expected parameter client"))
                 return@execute
             }
-            findAndUpdate(Collections.TENANTS.toString(), JsonObject.of("client", client), body, {
+            findAndUpdate(Collections.TENANTS.toString(), JsonObject.of("user", client), body, {
                 response.end(getResponse(OK.code(), "Successfully updated tenant"))
             }, {
                 logger.error("updateTenant(${it.message}) <--")

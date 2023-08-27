@@ -15,6 +15,7 @@ open class PaymentService : TenantService() {
     fun setPaymentRoutes(router: Router) {
         router.post("/payments").handler(::createPayment)
         router.get("/payments/:email/:pageNumber").handler(::getPayments)
+        router.get("/payments/:pageNumber").handler(::adminGetPayments)
         router.get("/payments/:id").handler(::getPayment)
         router.get("/payments/:term/:pageNumber").handler(::searchPayment)
         router.put("/payments/:id").handler(::updatePayment)
@@ -59,6 +60,59 @@ open class PaymentService : TenantService() {
         logger.info("getPayment() <--")
     }
 
+    private fun adminGetPayments(rc:RoutingContext){
+        logger.info("adminGetPayments() -->")
+        execute("adminGetPayments", rc, "admin", { user, _, response ->
+            val limit = 20
+            val pageNumber = Integer.valueOf(rc.request().getParam("pageNumber")) - 1
+            val skip = pageNumber * limit
+            val pipeline = JsonArray()
+            pipeline.add(
+                JsonObject.of(
+                    "\$lookup", JsonObject
+                        .of(
+                            "from", "app_user",
+                            "localField", "from",
+                            "foreignField", "email",
+                            "as", "user"
+                        )
+                )
+            )
+                .add(
+                    JsonObject.of(
+                        "\$project", JsonObject
+                            .of(
+                                "_id", "\$_id",
+                                "title", "\$title",
+                                "description", "\$description",
+                                "transactionCode", "\$transactionCode",
+                                "amount", "\$amount",
+                                "firstName", "\$user.firstName",
+                                "lastName", "\$user.lastName",
+                                "phoneNumber", "\$user.phone",
+                                "email", "\$user.email"
+                            )
+                    )
+                )
+                .add(JsonObject.of("\$skip", skip))
+                .add(JsonObject.of("\$limit", limit))
+                .add(JsonObject.of("\$sort", JsonObject.of("_id", -1)))
+            aggregate(Collections.PAYMENTS.toString(), pipeline, {
+                var data = arrayListOf<JsonObject?>()
+                if (it.isNotEmpty()){
+                    data = it
+                }
+                val paging = JsonObject.of("page", pageNumber, "sorted", true)
+                response.end(getResponse(OK.code(), "Success", JsonObject.of("data", data
+                    , "pagination", paging)))
+            }, {
+                logger.error("adminGetPayments(${it.message})")
+                response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
+            })
+        })
+        logger.info("adminGetPayments() <--")
+    }
+
     private fun getPayments(rc: RoutingContext) {
         logger.info("searchPayment() -->")
         execute("searchPayment", rc, "user", { user, _, response ->
@@ -90,10 +144,10 @@ open class PaymentService : TenantService() {
                                 "description", "\$description",
                                 "transactionCode", "\$transactionCode",
                                 "amount", "\$amount",
-                                "firstName", "user.firstname",
-                                "lastName", "user.lastname",
-                                "phoneNumber", "user.phoneNumber",
-                                "email", "user.email"
+                                "firstName", "\$user.firstName",
+                                "lastName", "\$user.lastName",
+                                "phoneNumber", "\$user.phone",
+                                "email", "\$user.email"
                             )
                     )
                 )
@@ -134,7 +188,7 @@ open class PaymentService : TenantService() {
                     JsonObject.of(
                         "\$lookup", JsonObject
                             .of(
-                                "from", "app_users",
+                                "from", "app_user",
                                 "localField", "from",
                                 "foreignField", "email",
                                 "as", "user"
@@ -150,10 +204,10 @@ open class PaymentService : TenantService() {
                                 "description", "\$description",
                                 "transactionCode", "\$transactionCode",
                                 "amount", "\$amount",
-                                "firstName", "user.firstname",
-                                "lastName", "user.lastname",
-                                "phoneNumber", "user.phoneNumber",
-                                "email", "user.email"
+                                "firstName", "\$user.firstname",
+                                "lastName", "\$user.lastname",
+                                "phoneNumber", "\$user.phoneNumber",
+                                "email", "\$user.email"
                             )
                     )
                 )

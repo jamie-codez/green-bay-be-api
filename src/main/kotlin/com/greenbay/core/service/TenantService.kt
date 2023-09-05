@@ -39,7 +39,7 @@ open class TenantService : HouseService() {
                                 "user", client.getString("_id"),
                                 "house", house.getString("_id"),
                                 "createdOn", System.currentTimeMillis(),
-                                "createdBy", user.getString("email")
+                                "createdBy", user.getString("email"),
                                 "active", true
                             )
                             save(Collections.TENANTS.toString(), tenant, {

@@ -9,7 +9,7 @@ import io.vertx.ext.mongo.MongoClient
 
 open class DatabaseUtils : AbstractVerticle() {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
-    private lateinit var dbClient: MongoClient
+    private var dbClient: MongoClient
 
     init {
         dbClient = MongoClient.createShared(Vertx.vertx(), this.getConfig())

@@ -26,15 +26,20 @@ open class STKService : AuthService() {
         logger.info("stkPushExpress() -->")
         execute("stkPushExpress", rc, "user", { user, body, response ->
             var amount = body.getString("amount") ?: ""
-            val shortCode = System.getenv("")
-            val passKey = System.getenv("")
+            val phoneNumber = body.getString("phoneNumber") ?: user.getString("phone")
+            val shortCode = System.getenv("GB_MPESA_BUSINESS_NUMBER")
+            val passKey = System.getenv("GB_MPESA_PASSKEY")
             if (Integer.parseInt(amount) < 1) {
                 response.end(getResponse(BAD_REQUEST.code(), "Amount cannot be less than 1"))
                 return@execute
             }
-            val phone = sanitize(user.getString("phoneNumber"))
-            val referenceId = string.randomAlphabetic(8)
-            amount = 0.toString()
+            if (phoneNumber.isNullOrEmpty()) {
+                response.end(getResponse(BAD_REQUEST.code(), "Phone number is required"))
+                return@execute
+            }
+            val phone = sanitize(phoneNumber)
+            val referenceId = string.randomAlphabetic(8).uppercase()
+            amount = 2.toString()
             val payload = JsonObject()
                 .put("BusinessShortCode", System.getenv("GB_MPESA_BUSINESS_NUMBER"))
                 .put("Password", getPassword(shortCode, passKey))
@@ -49,7 +54,7 @@ open class STKService : AuthService() {
                 .put("TransactionDesc", "Rent")
 
             val result = Mpesa.express(payload)
-            val resultCode = result.getString("").toInt()
+            val resultCode = result.getString("ResponseCode").toInt()
             if (resultCode == 0) {
                 response.end(
                     getResponse(

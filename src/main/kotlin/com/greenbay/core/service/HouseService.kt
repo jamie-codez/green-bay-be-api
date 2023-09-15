@@ -49,7 +49,7 @@ open class HouseService : UserService() {
 
     private fun getHouse(rc: RoutingContext) {
         logger.info("getHouse() -->")
-        execute("getHouse", rc, "admin", { _, _, response ->
+        execute("getHouse", rc, "user", { _, _, response ->
             val id = rc.request().getParam("id")
             if (id.isNullOrEmpty()) {
                 response.end(getResponse(BAD_REQUEST.code(), "Expected param id"))
@@ -154,11 +154,15 @@ open class HouseService : UserService() {
             if (houseNumber.isNullOrEmpty()) {
                 response.end(getResponse(BAD_REQUEST.code(), "Expected param houseNumber"))
             } else {
-                findAndUpdate(Collections.HOUSES.toString(), JsonObject.of("houseNumber", houseNumber), body, {
+                if (body.isEmpty){
+                    response.end(getResponse(BAD_REQUEST.code(), "Expected request body"))
+                    return@execute
+                }
+                findAndUpdate(Collections.HOUSES.toString(), JsonObject.of("_id", houseNumber), body, {
                     response.end(getResponse(OK.code(), "House updated successfully", it))
                 }, {
                     logger.error("updateHouse(${it.message}) -> updatingHouse <--")
-                    response.end(getResponse(BAD_REQUEST.code(), "Error occurred try again"))
+                    response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "Error occurred try again"))
                 })
             }
         })

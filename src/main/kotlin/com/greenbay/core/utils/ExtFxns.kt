@@ -6,7 +6,7 @@ fun String.randomAlphabetic(count: Int): String {
     for (i in 0 until count){
         random.add(alphabets.random())
     }
-    return random.toString().replace("[","").replace("]","").replace(",","").trim()
+    return random.toString().replace("[","").replace("]","").replace(",","").replace(" ","").trim()
 }
 
 fun String.randomNumeric(count: Int):String{

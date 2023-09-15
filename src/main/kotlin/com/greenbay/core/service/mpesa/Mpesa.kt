@@ -16,27 +16,37 @@ class Mpesa {
     companion object {
         private val logger = LoggerFactory.getLogger(Mpesa::class.java.simpleName)
 
+        @JvmStatic
         private fun authenticate(customerId: String, customerSecret: String): String {
             logger.info("authenticate() -->")
             val passKey = encodePass(customerId, customerSecret)
             val base64Password = Base64.getEncoder().encodeToString(passKey.toByteArray())
             val client = client()
-            val body = "".toRequestBody("application/json".toMediaTypeOrNull())
             val request = Request.Builder()
                 .url("https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials")
-                .method("GET", body)
-                .addHeader("Authorization", "Bearer $base64Password")
-                .addHeader("Accepts", "application/json")
+                .method("GET", null)
+                .addHeader("Authorization", "Basic $passKey")
                 .build()
             val response = client.newCall(request).execute()
-            val jsonResponse = JsonObject.mapFrom(response.body?.string())
+
+//            val jsonResponse = JSONObject(response.body?.string()).let {
+//                if (it.has("error")) {
+//                    logger.error("authenticate(${it.getString("error")}) <--")
+//                    return ""
+//                }else{
+//                    it
+//                }
+//            }
+            val jsonResponse = JSONObject(response.body?.string())
             logger.info("authenticate() <--")
-            return jsonResponse.getString("access-token")
+            return jsonResponse.getString("access_token")
         }
 
+        @JvmStatic
         private fun encodePass(consumerId: String, consumerSecret: String) =
-            Base64.getEncoder().encodeToString("$consumerId:$consumerSecret".toByteArray())
+            Base64.getEncoder().encodeToString("$consumerId:$consumerSecret".toByteArray(charset("ISO-8859-1")))
 
+        @JvmStatic
         fun express(payload: JsonObject): JsonObject {
             logger.info("express() -->")
             val client = client()
@@ -56,6 +66,7 @@ class Mpesa {
             return JsonObject(response.body?.string())
         }
 
+        @JvmStatic
         fun registerCallback(payload: JsonObject): JsonObject {
             logger.info("registerCallback() -->")
             val client = client()

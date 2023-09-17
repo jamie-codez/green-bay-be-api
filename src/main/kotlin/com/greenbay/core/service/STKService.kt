@@ -26,7 +26,7 @@ open class STKService : AuthService() {
         logger.info("stkPushExpress() -->")
         execute("stkPushExpress", rc, "user", { user, body, response ->
             var amount = body.getString("amount") ?: ""
-            val phoneNumber = body.getString("phoneNumber") ?: user.getString("phone")
+            val phoneNumber = body.getString("phone") ?: user.getString("phone")
             val shortCode = System.getenv("GB_MPESA_BUSINESS_NUMBER")
             val passKey = System.getenv("GB_MPESA_PASSKEY")
             if (Integer.parseInt(amount) < 1) {
@@ -39,7 +39,7 @@ open class STKService : AuthService() {
             }
             val phone = sanitize(phoneNumber)
             val referenceId = string.randomAlphabetic(8).uppercase()
-            amount = 2.toString()
+//            amount = amount.padStart(6, '0')
             val payload = JsonObject()
                 .put("BusinessShortCode", System.getenv("GB_MPESA_BUSINESS_NUMBER"))
                 .put("Password", getPassword(shortCode, passKey))

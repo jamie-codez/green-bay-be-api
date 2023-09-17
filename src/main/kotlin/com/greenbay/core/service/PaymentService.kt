@@ -115,13 +115,13 @@ open class PaymentService : TenantService() {
 
     private fun getPayments(rc: RoutingContext) {
         logger.info("searchPayment() -->")
-        execute("searchPayment", rc, "user", { user, _, response ->
+        execute("getPayments", rc, "user", { user, _, response ->
             val limit = 20
             val pageNumber = Integer.valueOf(rc.request().getParam("pageNumber")) - 1
             val skip = pageNumber * limit
             val owner = rc.request().getParam("email") ?: ""
             val pipeline = JsonArray()
-            if (owner == "mine") {
+            if (owner=="mine") {
                 pipeline.add(JsonObject.of("\$match", JsonObject.of("from", user.getString("email"))))
             }
             pipeline.add(

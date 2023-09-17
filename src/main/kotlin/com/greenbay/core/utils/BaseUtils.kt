@@ -243,6 +243,9 @@ open class BaseUtils : DatabaseUtils() {
      * Checks to conform that user has the role required to access the route in question
      */
     fun hasRole(roles: JsonObject, role: String): Boolean {
+        if (roles.isEmpty) {
+            return true
+        }
         var isRole = true
         for (i in 0 until roles.size()) {
             isRole = isRole && roles.getBoolean(role) == true

@@ -67,7 +67,7 @@ open class HouseService : UserService() {
 
     private fun getHouses(rc: RoutingContext) {
         logger.info("getHouses() -->")
-        execute("getHouses", rc, "admin", { _, _, response ->
+        execute("getHouses", rc, "user", { _, _, response ->
             val pageNumber = Integer.parseInt(rc.request().getParam("pageNumber")) - 1
             val limit = 20
             val skip = pageNumber * limit

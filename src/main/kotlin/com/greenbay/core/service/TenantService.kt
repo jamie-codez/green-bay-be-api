@@ -16,7 +16,7 @@ open class TenantService : HouseService() {
         router.get("/tenants/:id").handler(::getTenant)
         router.get("/tenants/:term/pageNumber").handler(::searchTenant)
         router.put("/tenants/:client").handler(::updateTenant)
-        router.delete("/tenants/:client").handler(::deleteTenant)
+        router.delete("/tenants/:id").handler(::deleteTenant)
         setHouseRoutes(router)
     }
 
@@ -304,12 +304,12 @@ open class TenantService : HouseService() {
     private fun deleteTenant(rc: RoutingContext) {
         logger.info("deleteTenant() -->")
         execute("deleteTenant", rc, "admin", { _, _, response ->
-            val client = rc.request().getParam("client")
+            val client = rc.request().getParam("id")
             if (client.isNullOrEmpty()) {
                 response.end(getResponse(BAD_REQUEST.code(), "Expected field client"))
                 return@execute
             }
-            findOneAndDelete(Collections.TENANTS.toString(), JsonObject.of("client", client), {
+            findOneAndDelete(Collections.TENANTS.toString(), JsonObject.of("_id", client), {
                 response.end(getResponse(OK.code(), "Successfully deleted tenant"))
             }, {
                 logger.error("deleteTenant(${it.message}) <--")

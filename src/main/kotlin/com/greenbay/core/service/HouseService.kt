@@ -17,8 +17,8 @@ open class HouseService : UserService() {
         router.get("/houses/:pageNumber").handler(::getHouses)
         router.get("/house/:id").handler(::getHouse)
         router.get("/houses/:term/:pageNumber").handler(::searchHouse)
-        router.put("/houses/:houseNumber").handler(::updateHouse)
-        router.delete("/houses/:houseNumber").handler(::deleteHouse)
+        router.put("/houses/:houseId").handler(::updateHouse)
+        router.delete("/houses/:houseId").handler(::deleteHouse)
         setUserRoutes(router)
     }
 
@@ -150,7 +150,7 @@ open class HouseService : UserService() {
     private fun updateHouse(rc: RoutingContext) {
         logger.info("updateHouse() -->")
         execute("updateHouse", rc, "admin", { _, body, response ->
-            val houseNumber = rc.request().getParam("houseNumber")
+            val houseNumber = rc.request().getParam("houseId")
             if (houseNumber.isNullOrEmpty()) {
                 response.end(getResponse(BAD_REQUEST.code(), "Expected param houseNumber"))
             } else {
@@ -172,12 +172,12 @@ open class HouseService : UserService() {
     private fun deleteHouse(rc: RoutingContext) {
         logger.info("deleteHouse() -->")
         execute("deleteHouse", rc, "admin", { _, _, response ->
-            val houseNumber = rc.request().getParam("houseNumber")
+            val houseNumber = rc.request().getParam("houseId")
             if (houseNumber.isNullOrEmpty()) {
                 logger.error("deleteHouse(houseNumber Empty) <--")
-                response.end(getResponse(BAD_REQUEST.code(), "Expected param houseNumber"))
+                response.end(getResponse(BAD_REQUEST.code(), "Expected param houseId"))
             } else {
-                findOneAndDelete(Collections.HOUSES.toString(), JsonObject.of("houseNumber", houseNumber), {
+                findOneAndDelete(Collections.HOUSES.toString(), JsonObject.of("_id", houseNumber), {
                     response.end(getResponse(OK.code(), "Deleted house successfully"))
                 }, {
                     logger.error("deleteHouse(${it.message}) -> deletingHouse <--")

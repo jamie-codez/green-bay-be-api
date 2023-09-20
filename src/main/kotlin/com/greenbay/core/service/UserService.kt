@@ -21,6 +21,7 @@ open class UserService : BaseUtils() {
         router.post("/users/admin").handler(::createAdmin)
         router.get("/users/:pageNumber").handler(::getUsers)
         router.get("/user/:id").handler(::getUser)
+        router.get("/user/me/").handler(::getUserMe)
         router.get("/user/activate/:email/:code").handler(::activateEmail)
         router.get("/users/search/:term/:pageNumber").handler(::searchUser)
         router.put("/users/:id").handler(::updateUser)
@@ -209,8 +210,8 @@ open class UserService : BaseUtils() {
 
     private fun getUser(rc: RoutingContext) {
         logger.info("getUser() -->")
-        execute("getUser", rc, "user", { _, _, response ->
-            val id = rc.request().getParam("id")
+        execute("getUser", rc, "user", { user, _, response ->
+            val id = rc.request().getParam("id")?:user.getString("email")
             if (id.isNullOrEmpty()) {
                 response.end(getResponse(BAD_REQUEST.code(), "id cannot be null"))
                 return@execute
@@ -225,6 +226,26 @@ open class UserService : BaseUtils() {
             })
         })
         logger.info("getUser() <--")
+    }
+
+    private fun getUserMe(rc: RoutingContext) {
+        logger.info("getUserMe() -->")
+        execute("getUserMe", rc, "user", { user, _, response ->
+            logger.info("getUserMe() --> user ${user.encodePrettily()}")
+            val email = user.getString("email")
+            val query = JsonObject.of("email", email)
+            findOne(Collections.APP_USERS.toString(), query, {
+                if (it.isEmpty) {
+                    response.end(getResponse(NOT_FOUND.code(), "User not found"))
+                    return@findOne
+                }
+                response.end(getResponse(OK.code(), "Successful", it))
+            }, {
+                logger.error("getUser(${it.message}) <--", it)
+                response.end(getResponse(INTERNAL_SERVER_ERROR.code(), "An error occurred try again"))
+            })
+        })
+        logger.info("getUserMe() <--")
     }
 
     private fun searchUser(rc: RoutingContext) {

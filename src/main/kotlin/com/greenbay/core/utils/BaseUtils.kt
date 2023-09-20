@@ -104,6 +104,7 @@ open class BaseUtils : DatabaseUtils() {
             response.end(getResponse(UNAUTHORIZED.code(), "User account not verified"))
             return
         }
+        logger.info("bodyHandler($task) --> user: ${user.encodePrettily()}")
         inject(user, body, response)
         logger.info("bodyHandler($task) <--")
     }

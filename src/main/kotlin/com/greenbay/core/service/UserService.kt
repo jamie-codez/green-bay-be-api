@@ -15,6 +15,7 @@ import kotlin.random.Random
 
 open class UserService : BaseUtils() {
     private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
+    private val ngrokUrl = ""
 
     fun setUserRoutes(router: Router) {
         router.post("/users").handler(::createUser)

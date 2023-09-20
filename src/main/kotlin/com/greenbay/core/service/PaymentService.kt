@@ -19,7 +19,7 @@ open class PaymentService : TenantService() {
         router.get("/payments/:id").handler(::getPayment)
         router.get("/payments/:term/:pageNumber").handler(::searchPayment)
         router.put("/payments/:id").handler(::updatePayment)
-        router.delete("/payments/:referenceNumber").handler(::deletePayment)
+        router.delete("/payments/:id").handler(::deletePayment)
         router.delete("/payments/:referenceNumber/:email").handler(::deleteMyPayment)
         setTenantRoutes(router)
     }
@@ -253,12 +253,12 @@ open class PaymentService : TenantService() {
     private fun deletePayment(rc: RoutingContext) {
         logger.info("deletePayment() -->")
         execute("deletePayment", rc, "admin", { _, _, response ->
-            val referenceNumber = rc.request().getParam("referenceNumber")
+            val referenceNumber = rc.request().getParam("id")
             if (referenceNumber.isNullOrEmpty()) {
-                response.end(getResponse(BAD_REQUEST.code(), "Expected parameter referenceNumber"))
+                response.end(getResponse(BAD_REQUEST.code(), "Expected parameter id"))
                 return@execute
             }
-            val query = JsonObject.of("referenceNumber", referenceNumber)
+            val query = JsonObject.of("_id", referenceNumber)
             findOneAndDelete(Collections.PAYMENTS.toString(), query, {
                 response.end(getResponse(OK.code(), "Payment deleted successfully", it))
             }, {

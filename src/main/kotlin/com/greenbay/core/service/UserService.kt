@@ -22,7 +22,7 @@ open class UserService : BaseUtils() {
         router.post("/users/admin").handler(::createAdmin)
         router.get("/users/:pageNumber").handler(::getUsers)
         router.get("/user/:id").handler(::getUser)
-        router.get("/user/me/").handler(::getUserMe)
+        router.get("/user/me/:email").handler(::getUserMe)
         router.get("/user/activate/:email/:code").handler(::activateEmail)
         router.get("/users/search/:term/:pageNumber").handler(::searchUser)
         router.put("/users/:id").handler(::updateUser)
